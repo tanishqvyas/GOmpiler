@@ -1,0 +1,6 @@
+**.out
+**.gch
+**.tab.*
+**/lex.yy.c 
+**symbol
+**y.output
