@@ -1,0 +1,37 @@
+Black \033[0;30m
+Red \033[0;31m
+Green \033[0;32m
+Yellow \033[0;33m
+Blue \033[0;34m
+Purple \033[0;35m
+Cyan \033[0;36m
+White \033[0;37m
+
+
+
+typedef struct YYLTYPE
+{
+  int first_line;
+  int first_column;
+  int last_line;
+  int last_column;
+} YYLTYPE;
+
+
+# Parser
+int main()
+{
+    yylloc.first_line=yylloc.last_line=1;
+    yylloc.first_column=yylloc.last_column=0;
+    return yyparse() ;
+}
+
+
+# Scanner
+yylloc.first_column = yylloc.last_column+1; yylloc.last_column += strlen(yytext);
+
+
+@$.first_column = @1.first_column;
+@$.first_line = @1.first_line;
+@$.last_column = @3.last_column;
+@$.last_line = @3.last_line;

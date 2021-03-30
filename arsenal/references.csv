@@ -1,0 +1,4 @@
+Serial Number, Title, Link, Description
+0, GO Examples, https://gobyexample.com/, A good reference for GO code examples.
+1, Routines to reprocess input, http://osr507doc.sco.com/en/tools/Lex_reprocessing.html, A good reference to lookup functions in lex
+2, YYACCEPT, https://www.gnu.org/software/bison/manual/html_node/Parser-Function.html, MACRO Information
