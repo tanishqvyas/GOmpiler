@@ -38,22 +38,42 @@
 
 %%
 
-program                         :  T_PACKAGE T_MAIN imports body 
+program                         : T_PACKAGE T_MAIN imports body
+                                ;
+
+imports                         : import
+                                | import imports
+                                ;
+
+import                          : T_IMPORT importname
+                                | T_IMPORT T_PAREN_OPEN importnames T_PAREN_CLOSE
+                                | T_IMPORT T_PAREN_OPEN importnames 
+                                | T_IMPORT importnames T_PAREN_CLOSE 
+                                ;
+
+importnames                     : importname
+                                | importname importnames
+                                ;
+
+importname                      :T_STRING
+                                ;
+
+semi                            : T_SEMI
+                                | /* EPSILON */
                                 ;
 
 body                            :  mainFunctionDefinition
-                                |  functionDefinition mainFunctionDefinition
+                                |  functionDefinitions mainFunctionDefinition
                                 ;
 
-imports                         : import imports
+mainFunctionDefinition          : T_FUNC T_MAIN T_PAREN_OPEN T_PAREN_CLOSE compoundStatement                 
                                 ;
 
-import                          : T_IMPORT T_STRING semi
-                                | /* EPSILON */
+functionDefinitions             : functionDefinition
+                                | functionDefinitions functionDefinition
                                 ;
 
-functionDefinition              : T_FUNC T_IDENTIFIER T_PAREN_OPEN parameterlist T_PAREN_CLOSE returntype compoundStatement functionDefinition
-                                | /* EPSILON */
+functionDefinition              : T_FUNC T_IDENTIFIER T_PAREN_OPEN parameterlist T_PAREN_CLOSE returntype compoundStatement
                                 ;
 
 parameterlist                   : parameters
@@ -71,7 +91,6 @@ returntype                      : type
                                 | /* EPSILON */
                                 ;
 
-
 type                            : T_INT    
                                 | T_STR    
                                 | T_FLT64
@@ -81,32 +100,26 @@ type                            : T_INT
 returnStatement                 : T_RETURN expressions semi
                                 ;
 
-mainFunctionDefinition          : T_FUNC T_MAIN T_PAREN_OPEN T_PAREN_CLOSE compoundStatement                 
-                                ;
-
 compoundStatement               : T_CURLY_OPEN statements T_CURLY_CLOSE
                                 ;
 
-statements                      : statement statements
+
+statements                      : compoundStatement statements
+                                | printStatement statements
+                                | switchStatement statements
+                                | repeatUntilStatement statements
+                                | returnStatement statements
                                 | /*EPSILON */
                                 ;
 
-statement                       : compoundStatement
-                                | printStatement
-                                | switchStatement
-                                | repeatUntilStatement
+statement                       : printStatement
                                 | returnStatement
-                                | variableDeclaration
-                                | arrayDeclaration
-                                | variableAssignment
-                                | arrayAssignment
-                                | /*EPSILON */
                                 ;
 
 printStatement                  : T_FMT T_DOT T_PRINT T_PAREN_OPEN T_STRING T_PAREN_CLOSE semi
                                 ;
 
-switchStatement                 : T_SWITCH switchValue T_CURLY_OPEN switchCaseStatement T_CURLY_CLOSE
+switchStatement                 : T_SWITCH switchValue T_CURLY_OPEN switchCaseStatements T_CURLY_CLOSE
                                 ;
 
 switchValue                     : T_IDENTIFIER
@@ -116,20 +129,16 @@ switchValue                     : T_IDENTIFIER
                                 | /* EPSILON */ 
                                 ;
 
-switchCaseStatement             : T_CASE caseValues T_COLON statements fallthroughStatement
+switchCaseStatements            : switchCaseStatement
+                                | switchCaseStatement switchCaseStatements
+                                ;
+
+switchCaseStatement             : T_CASE arithmeticExpression T_COLON statements fallthroughStatement
                                 | T_DEFAULT T_COLON statements 
                                 ;
 
 fallthroughStatement            : T_FALLTHROUGH
                                 | /* EPSILON */
-                                ;
-
-caseValues                      : caseValue T_COMMA
-                                | caseValue
-                                | /* EPSILON */
-                                ;
-
-caseValue                       : expressions
                                 ;
 
 expressions                     : arithmeticExpression
@@ -148,8 +157,7 @@ T                               : T T_MUL F
                                 | F
                                 ;
 
-F                               : T_PAREN_OPEN expressions T_PAREN_CLOSE
-                                | expressions
+F                               : T_PAREN_OPEN arithmeticExpression T_PAREN_CLOSE
                                 | T_IDENTIFIER
                                 | number
                                 ;
@@ -158,7 +166,7 @@ number                          : T_INTEGER
                                 | T_FLOAT64
                                 ;
 
-relationalExpression            : expressions relationalOperator expressions
+relationalExpression            : arithmeticExpression relationalOperator arithmeticExpression
                                 | T_STRING relationalOperator T_STRING
                                 | T_TRUE
                                 | T_FALSE
@@ -180,56 +188,19 @@ L                               : L T_AND M
                                 | M
                                 ;
                        
-M                               : M T_OR F
-                                | F
+M                               : M T_OR N
+                                | N
                                 ;
 
-repeatUntilStatement            : T_REPEAT T_CURLY_OPEN statements T_CURLY_CLOSE T_UNTIL untilCondition
-                                | T_REPEAT statement T_UNTIL untilCondition
+N                               : T_PAREN_OPEN relationalExpression T_PAREN_CLOSE
                                 ;
 
-untilCondition                  : expressions
+
+repeatUntilStatement            : T_REPEAT T_CURLY_OPEN statements T_CURLY_CLOSE T_UNTIL expressions
+                                | T_REPEAT statement T_UNTIL expressions
                                 ;
 
-variableDeclaration             : T_VAR T_IDENTIFIER type T_ASSIGN strexpressions semi
-                                | T_VAR T_IDENTIFIER type semi
-                                | T_VAR T_IDENTIFIER T_ASSIGN strexpressions semi
-                                | T_IDENTIFIER T_WALRUS strexpressions semi
-                                ;
 
-arrayDeclaration                : T_VAR T_IDENTIFIER T_BRACKET_OPEN arraylength T_BRACKET_CLOSE type semi
-                                | T_VAR T_IDENTIFIER T_BRACKET_OPEN arraylength T_BRACKET_CLOSE type T_CURLY_OPEN arrayvalues T_CURLY_CLOSE semi
-                                | T_IDENTIFIER T_WALRUS T_BRACKET_OPEN arraylength T_BRACKET_CLOSE type T_CURLY_OPEN arrayvalues T_CURLY_CLOSE semi
-                                ;
-
-                                
-arraylength                     : arithmeticExpression
-                                ;
-
-arrayvalues                     : value
-                                | arrayvalues T_COMMA value 
-                                ;
-
-value          	                : T_INTEGER
-                                | T_FLOAT64
-                                | T_STRING
-                                | T_TRUE
-                                | T_FALSE
-                                ;
-
-strexpressions                  : T_STRING
-                                | expressions
-                                ;
-
-variableAssignment              : T_IDENTIFIER T_ASSIGN expressions semi
-                                ;
-
-arrayAssignment                 :T_IDENTIFIER T_BRACKET_OPEN arithmeticExpression T_BRACKET_CLOSE T_ASSIGN value semi
-                                ;
-
-semi                            : T_SEMI
-                                | /* EPSILON */
-                                ;
 
 %%
 

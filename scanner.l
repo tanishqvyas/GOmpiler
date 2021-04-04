@@ -166,6 +166,9 @@ true                    {if (DEBUG_MODE) print_token(yytext,LITERAL, yylineno); 
 
 
 %%
+int yywrap(){
+    return 1;
+}
 
 void print_token(char* tokenname, char* type, int lineno)
 {
