@@ -2,12 +2,13 @@
 
     #include<stdio.h>
     #include<stdlib.h>
+    #include<string.h>
     extern void yyerror(char* s);  /* prints grammar violation message */
     extern int yylex();
     extern FILE *yyin;
     extern FILE *yyout;
-    extern int yylineno;
-    // extern YYLTYPE yylloc;
+    int yylineno=0;
+    //extern YYLTYPE yylloc;
     extern char* yytext;
     int yyscope=0;
     /* 0 implies global yyscope */
@@ -16,7 +17,7 @@
 
 %}
 
-
+%union { char *str; }
 %start program
 
 %token T_PACKAGE T_MAIN T_FUNC T_PRINT T_VAR T_RETURN
@@ -109,11 +110,15 @@ statements                      : compoundStatement statements
                                 | switchStatement statements
                                 | repeatUntilStatement statements
                                 | returnStatement statements
+                                | variableDeclaration statements
+                                | arrayDeclaration statements
                                 | /*EPSILON */
                                 ;
 
 statement                       : printStatement
                                 | returnStatement
+                                | variableDeclaration
+                                | arrayDeclaration 
                                 ;
 
 printStatement                  : T_FMT T_DOT T_PRINT T_PAREN_OPEN T_STRING T_PAREN_CLOSE semi
@@ -200,6 +205,33 @@ repeatUntilStatement            : T_REPEAT T_CURLY_OPEN statements T_CURLY_CLOSE
                                 | T_REPEAT statement T_UNTIL expressions
                                 ;
 
+variableDeclaration             : T_VAR T_IDENTIFIER type T_ASSIGN strexpressions semi
+                                | T_VAR T_IDENTIFIER type semi
+                                | T_VAR T_IDENTIFIER T_ASSIGN strexpressions semi
+                                | T_IDENTIFIER T_WALRUS strexpressions semi
+                                ;
+
+arrayDeclaration                : T_VAR T_IDENTIFIER T_BRACKET_OPEN arraylength T_BRACKET_CLOSE type T_CURLY_OPEN arrayvalues T_CURLY_CLOSE semi
+                                | T_IDENTIFIER T_WALRUS T_BRACKET_OPEN arraylength T_BRACKET_CLOSE type T_CURLY_OPEN arrayvalues T_CURLY_CLOSE semi
+                                ;
+ 
+arraylength                     : arithmeticExpression
+                                ;
+
+arrayvalues                     : value
+                                | arrayvalues T_COMMA value 
+                                ;
+
+value          	                : T_INTEGER
+                                | T_FLOAT64
+                                | T_STRING
+                                | T_TRUE
+                                | T_FALSE
+                                ;
+
+strexpressions                  : T_STRING
+                                | expressions
+                                ;
 
 
 %%
@@ -214,13 +246,15 @@ extern void yyerror(char* si)
 int main(int argc, char * argv[])
 {
     yyin=fopen(argv[1],"r");
+    yylloc.first_line=yylloc.last_line=1;
+    yylloc.first_column=yylloc.last_column=0;
     printf("LINENO \t TYPE      \tTOKENNAME\n");
     yyparse();
     if(valid==0)
     {
         printf("Syntax was Invalid!\n");
     }
-    printSymbolTable();
+    // printSymbolTable();
     fclose(yyin);
     return 0;
 

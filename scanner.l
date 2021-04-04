@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "y.tab.h"
 extern int yyscope;
+extern int yylineno;
 
 #define DEBUG_MODE 1
 #define KEYWORD "KEYWORD"
