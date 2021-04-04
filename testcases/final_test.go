@@ -50,7 +50,7 @@ func main()
 	}
 	
 	//Array Declaration
-	var array [3]int
+	
 	var i int = 0
 	repeat
 	{

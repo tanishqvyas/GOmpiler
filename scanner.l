@@ -12,6 +12,8 @@ extern int yylineno;
 #define SEPARATOR "SEPARATOR"
 #define IDENTIFIER "IDENTIFIER"
 
+
+void checkclosed();
 void print_token(char* tokenname,char* type,int lineno);
 
 %}
@@ -24,7 +26,7 @@ optionalFraction            (\.{digits})?
 optionalExponent            ([Ee][+-]?{digits})?
 intNumber                   {digits}
 floatNumber                 {digits}{optionalFraction}{optionalExponent}
-identifier                  [{letter}|underscore]({letter}|{digits}|underscore)*
+identifier                  ({letter}|{underscore})({letter}|{digits}|{underscore})*
 
 
 %%
@@ -33,7 +35,9 @@ identifier                  [{letter}|underscore]({letter}|{digits}|underscore)*
 
  /* IGNORING COMMENTS */
 (\/\/.*)[\n] 		{++yylineno;yylloc.first_column = 1; yylloc.last_column = 1;}
-\/\*	            {;}
+\/\*	            {
+                        checkclosed();
+                    }
 \*\/                {
                         printf("\033[0;31mERROR at line number : %d\n \033[0;37m Dangling Comment \033[0;35m\n\n", yylineno);
                     }
@@ -174,4 +178,34 @@ int yywrap(){
 void print_token(char* tokenname, char* type, int lineno)
 {
     printf("\033[0;33m %d\t \033[0;36m[%s]\t\033[0;35m%s\t \033[0;37m\n", lineno, type, tokenname);
+}
+
+void checkclosed()
+{
+	char c, c1;
+loop:
+	while ((c = input()) != '*' && c != 0)
+    {
+        if(c==10)
+        {
+            ++yylineno;
+            yylloc.first_column = 1; yylloc.last_column = 1;
+        }
+    }
+	if ((c1 = input()) != '/' && c != 0)
+	{
+        if(c1==10)
+        {
+            ++yylineno;
+            yylloc.first_column = 1; yylloc.last_column = 1;
+        }
+		unput(c1);
+        goto loop;
+	}
+    else if(c==0)
+    {
+        printf("\033[0;31mERROR at line number : %d\n \033[0;37m Unclosed Comment \033[0;35m\n\n", yylineno);
+    }
+    else
+        return;
 }

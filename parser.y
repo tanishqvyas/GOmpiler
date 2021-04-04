@@ -7,16 +7,16 @@
     extern int yylex();
     extern FILE *yyin;
     extern FILE *yyout;
-    int yylineno=0;
+    extern int yylineno;
     //extern YYLTYPE yylloc;
     extern char* yytext;
-    int yyscope=0;
+    extern int yyscope;
     /* 0 implies global yyscope */
     int flag=0;
     int valid=1;
 
 %}
-
+%locations
 %union { char *str; }
 %start program
 
@@ -112,6 +112,8 @@ statements                      : compoundStatement statements
                                 | returnStatement statements
                                 | variableDeclaration statements
                                 | arrayDeclaration statements
+                                | variableAssignment statements
+                                | arrayAssignment statements
                                 | /*EPSILON */
                                 ;
 
@@ -119,6 +121,8 @@ statement                       : printStatement
                                 | returnStatement
                                 | variableDeclaration
                                 | arrayDeclaration 
+                                | variableAssignment
+                                | arrayAssignment
                                 ;
 
 printStatement                  : T_FMT T_DOT T_PRINT T_PAREN_OPEN T_STRING T_PAREN_CLOSE semi
@@ -138,7 +142,7 @@ switchCaseStatements            : switchCaseStatement
                                 | switchCaseStatement switchCaseStatements
                                 ;
 
-switchCaseStatement             : T_CASE arithmeticExpression T_COLON statements fallthroughStatement
+switchCaseStatement             : T_CASE expressions T_COLON statements fallthroughStatement
                                 | T_DEFAULT T_COLON statements 
                                 ;
 
@@ -233,7 +237,11 @@ strexpressions                  : T_STRING
                                 | expressions
                                 ;
 
+variableAssignment              : T_IDENTIFIER T_ASSIGN strexpressions semi
+                                ;
 
+arrayAssignment                 :T_IDENTIFIER T_BRACKET_OPEN arithmeticExpression T_BRACKET_CLOSE T_ASSIGN strexpressions semi
+                                ;
 %%
 
 extern void yyerror(char* si)
@@ -254,7 +262,6 @@ int main(int argc, char * argv[])
     {
         printf("Syntax was Invalid!\n");
     }
-    // printSymbolTable();
     fclose(yyin);
     return 0;
 
