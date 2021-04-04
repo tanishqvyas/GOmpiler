@@ -111,8 +111,8 @@ return                                  {if (DEBUG_MODE) print_token(yytext,KEYW
 ":"                     {if (DEBUG_MODE) print_token(yytext,SEPARATOR, yylineno); yylloc.first_column = yylloc.last_column+1; yylloc.last_column += strlen(yytext); yylval.str= strdup(yytext); return T_COLON;}
 "("					    {if (DEBUG_MODE) print_token(yytext,SEPARATOR, yylineno); yylloc.first_column = yylloc.last_column+1; yylloc.last_column += strlen(yytext); yylval.str= strdup(yytext); return T_PAREN_OPEN;}
 ")"					    {if (DEBUG_MODE) print_token(yytext,SEPARATOR, yylineno); yylloc.first_column = yylloc.last_column+1; yylloc.last_column += strlen(yytext); yylval.str= strdup(yytext); return T_PAREN_CLOSE;}
-"{"					    {if (DEBUG_MODE) print_token(yytext,SEPARATOR, yylineno); yylloc.first_column = yylloc.last_column+1; yylloc.last_column += strlen(yytext); yylval.str= strdup(yytext); return T_CURLY_OPEN;}
-"}"					    {if (DEBUG_MODE) print_token(yytext,SEPARATOR, yylineno); yylloc.first_column = yylloc.last_column+1; yylloc.last_column += strlen(yytext); yylval.str= strdup(yytext); return T_CURLY_CLOSE;}
+"{"					    {++yyscope; if (DEBUG_MODE) print_token(yytext,SEPARATOR, yylineno); yylloc.first_column = yylloc.last_column+1; yylloc.last_column += strlen(yytext); yylval.str= strdup(yytext); return T_CURLY_OPEN;}
+"}"					    {--yyscope; if (DEBUG_MODE) print_token(yytext,SEPARATOR, yylineno); yylloc.first_column = yylloc.last_column+1; yylloc.last_column += strlen(yytext); yylval.str= strdup(yytext); return T_CURLY_CLOSE;}
 "["					    {if (DEBUG_MODE) print_token(yytext,SEPARATOR, yylineno); yylloc.first_column = yylloc.last_column+1; yylloc.last_column += strlen(yytext); yylval.str= strdup(yytext); return T_BRACKET_OPEN;}
 "]"					    {if (DEBUG_MODE) print_token(yytext,SEPARATOR, yylineno); yylloc.first_column = yylloc.last_column+1; yylloc.last_column += strlen(yytext); yylval.str= strdup(yytext); return T_BRACKET_CLOSE;}
 "."					    {if (DEBUG_MODE) print_token(yytext,SEPARATOR, yylineno); yylloc.first_column = yylloc.last_column+1; yylloc.last_column += strlen(yytext); yylval.str= strdup(yytext); return T_DOT;}
