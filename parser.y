@@ -3,6 +3,8 @@
     #include<stdio.h>
     #include<stdlib.h>
     #include<string.h>
+    #include "symboltable.c"
+
     extern void yyerror(char* s);  /* prints grammar violation message */
     extern int yylex();
     extern FILE *yyin;
@@ -10,7 +12,7 @@
     extern int yylineno;
     //extern YYLTYPE yylloc;
     extern char* yytext;
-    extern int yyscope;
+    int yyscope=0;
     /* 0 implies global yyscope */
     int flag=0;
     int valid=1;
@@ -44,14 +46,14 @@
     void repeatUntilGen(char arg1[100]);
     void push(int data);
     int pop();
-
+    int findSize(char type[100]);
 %}
 %locations
 %union { char *str; }
 %start program
 
 %token T_PACKAGE T_MAIN T_FUNC T_PRINT T_VAR T_RETURN
-%token T_BOOL T_FLT64
+
 %token T_FALLTHROUGH T_DEFAULT T_SWITCH T_CASE T_REPEAT T_UNTIL T_IMPORT T_FMT
 %token T_COMMA T_COLON T_PAREN_OPEN T_PAREN_CLOSE T_CURLY_OPEN T_CURLY_CLOSE T_BRACKET_OPEN T_BRACKET_CLOSE T_DOT
 %token T_SPLUS T_SMINUS T_SMUL T_SDIV T_SMOD T_SAND T_SOR  T_LSHIFT T_RSHIFT T_PLUS T_MINUS T_DIV T_MUL T_MOD T_WALRUS  T_BAND T_BOR T_BXOR 
@@ -64,10 +66,10 @@
 %token <str> T_FLOAT64
 %token <str> T_IDENTIFIER
 %token <str> T_NOTEQ T_COMP T_LTE T_GTE T_AND T_OR T_BNOT T_LT T_GT
-%token T_INT T_STR
+%token <str> T_INT T_STR T_BOOL T_FLT64
 
 %type <str> variableAssignment variableDeclaration strexpressions number expressions arithmeticExpression relationalExpression logicalExpression relationalOperator
-%type <str> L M N T F switchValue
+%type <str> L M N T F switchValue type
 
 %%
 
@@ -334,6 +336,17 @@ repeatUntilStatement            : T_REPEAT T_CURLY_OPEN {push(Index);} statement
 variableDeclaration             : T_VAR T_IDENTIFIER type T_ASSIGN strexpressions semi
                                 {
                                     AddQuadruple("=",$5,"",$2,$$);
+
+                                    int foundIndex = checkDeclared(yyscope,$2);
+                                    if(foundIndex == -1)
+                                    {
+                                        insertSymbolEntry($2 , yylineno, @2.first_column, yyscope, $3, $5,findSize($3));   
+                                    }
+
+                                    else
+                                    {
+                                        printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m Redeclared in this block.\n\n", yylineno, $2);
+                                    }
                                 }
                                 | T_VAR T_IDENTIFIER type semi
                                 {
@@ -380,10 +393,31 @@ strexpressions                  : T_STRING
 variableAssignment              : T_IDENTIFIER T_ASSIGN strexpressions semi
                                 {
                                     AddQuadruple("=",$3,"",$1,$$);
+
+                                    int foundIndex = searchSymbol(yyscope, $1);
+                           
+                                    if(foundIndex == -1)
+                                    {
+                                        printf("\033[0;31mError at line number %d\n\033[0;37m ReferenceError : assignment to undeclared variable \033[0;35m%s\033[0;37m\n\n", yylineno, $1);
+                                    }
+                                    else
+                                    {
+                                        char* curType = DetermineType($3);
+                                        
+
+                                        if(strcmp(SymbolTable[foundIndex].type, curType) == 0)
+                                        {
+                                            updateSymbolEntry($1, yylineno, @1.first_column, yyscope, SymbolTable[foundIndex].type, $3);
+                                        }
+                                        else
+                                        {
+                                            printf("\033[0;31mError at line number %d\n\033[0;37m Cannot use %s (type untyped %s) as type %s in assignment\n\n", yylineno, $3, curType, SymbolTable[foundIndex].type);
+                                        }
+                                    }
                                 }
                                 ;
 
-arrayAssignment                 :T_IDENTIFIER T_BRACKET_OPEN arithmeticExpression T_BRACKET_CLOSE T_ASSIGN strexpressions semi
+arrayAssignment                 : T_IDENTIFIER T_BRACKET_OPEN arithmeticExpression T_BRACKET_CLOSE T_ASSIGN strexpressions semi
                                 ;
 %%
 
@@ -493,6 +527,27 @@ void repeatUntilGen(char arg1[10])
     sprintf(QUAD[Ind2].result,"%d",Index);
 }
 
+int findSize(char type[100])
+{
+    
+    if(strcmp(type,"int") == 0)
+    {
+        return 4;
+    }
+    else if(strcmp(type,"float64") == 0)
+    {
+        return 8;
+    }
+    else if(strcmp(type,"string") == 0)
+    {
+        return 0;
+    }
+    else if(strcmp(type,"bool") == 0)
+    {
+        return 1;
+    }
+}
+
 int main(int argc, char * argv[])
 {
     yyin=fopen(argv[1],"r");
@@ -510,7 +565,7 @@ int main(int argc, char * argv[])
     {
         printf("Syntax was Invalid!\n");
     }
-
+    printSymbolTable();
     fclose(yyin);
     return 0;
 
