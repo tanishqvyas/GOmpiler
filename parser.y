@@ -75,7 +75,7 @@
 %token <str> T_INT T_STR T_BOOL T_FLT64
 
 %type <str> strexpressions number expressions arithmeticExpression relationalExpression logicalExpression relationalOperator
-%type <str> L M N T F switchValue type
+%type <str> L M N T F switchValue type value arrayvalues
 
 %%
 
@@ -106,6 +106,7 @@ semi                            : T_SEMI
 body                            :  mainFunctionDefinition
                                 |  functionDefinitions mainFunctionDefinition
                                 ;
+
 
 mainFunctionDefinition          : T_FUNC T_MAIN T_PAREN_OPEN T_PAREN_CLOSE compoundStatement                 
                                 ;
@@ -141,7 +142,7 @@ type                            : T_INT
 returnStatement                 : T_RETURN expressions semi
                                 ;
 
-compoundStatement               : T_CURLY_OPEN statements T_CURLY_CLOSE
+compoundStatement               : T_CURLY_OPEN{++yyscope;} statements {--yyscope;}T_CURLY_CLOSE
                                 ;
 
 
@@ -168,7 +169,7 @@ switchStatement                 : T_SWITCH switchValue
                                     switches[recentswitch].index=Index;
                                     sprintf(switches[recentswitch].switchvalue,"%s",$2);
                                 }
-                                T_CURLY_OPEN switchCaseStatements T_CURLY_CLOSE
+                                T_CURLY_OPEN {++yyscope;} switchCaseStatements {--yyscope;}T_CURLY_CLOSE
                                 {
                                     switchFillJumps();
                                 }
@@ -214,7 +215,6 @@ fallthroughStatement            : T_FALLTHROUGH
 
 expressions                     : arithmeticExpression
                                 {
-                                    
                                     strcpy($$,$1);
                                 }
                                 | relationalExpression
@@ -263,7 +263,32 @@ F                               : {strcat(doldol,"(");}T_PAREN_OPEN arithmeticEx
                                 {
                                     strcpy($$,$3);
                                 }
-                                | T_IDENTIFIER{strcat(doldol,$1);}
+                                | T_IDENTIFIER
+                                {
+                                    int foundIndex = searchSymbol(yyscope, $1);
+                                    if(foundIndex == -1)
+                                    {
+                                        printf("\033[0;31mError at line number %d\n\033[0;37m ReferenceError : assignment to undeclared variable \033[0;35m%s\033[0;37m\n\n", yylineno, $1);
+                                    }
+                                    else
+                                    {
+                                        strcat(doldol,$1);
+                                    }
+                                }
+                                | T_IDENTIFIER T_BRACKET_OPEN{strcat(doldol,$1);strcat(doldol,"[");} arithmeticExpression {strcat(doldol,"]");} T_BRACKET_CLOSE
+                                {
+                                    
+                                    int foundIndex = searchSymbol(yyscope, $1);
+                                    if(foundIndex == -1)
+                                    {
+                                        printf("\033[0;31mError at line number %d\n\033[0;37m ReferenceError : assignment to undeclared variable \033[0;35m%s\033[0;37m\n\n", yylineno, $1);
+                                    }
+                                    else
+                                    {
+                                        GenerateTemp("*",findSize(SymbolTable[foundIndex].type),$4,resulttemp);
+                                        GenerateTemp("=[]",$1,resulttemp,$$);
+                                    }
+                                }
                                 | number
                                 {
                                     strcat(doldol,$1);
@@ -334,13 +359,13 @@ N                               : T_PAREN_OPEN {strcat(doldol,"(");} relationalE
                                 ;
 
 
-repeatUntilStatement            : T_REPEAT T_CURLY_OPEN { push(Index);createLabel();} statements T_CURLY_CLOSE T_UNTIL expressions semi
+repeatUntilStatement            : T_REPEAT T_CURLY_OPEN { ++yyscope;push(Index);createLabel();} statements {--yyscope;}T_CURLY_CLOSE T_UNTIL expressions semi
                                 {
-                                    repeatUntilGen($7);
+                                    repeatUntilGen($8);
                                 }
-                                | T_REPEAT {push(Index);createLabel(); } statement T_UNTIL expressions semi
+                                | T_REPEAT {++yyscope;push(Index);createLabel(); } statement {--yyscope;}T_UNTIL expressions semi
                                 {
-                                    repeatUntilGen($5);
+                                    repeatUntilGen($6);
                                 }
                                 ;
 
@@ -351,7 +376,19 @@ variableDeclaration             : T_VAR T_IDENTIFIER type T_ASSIGN {strcpy(doldo
                                     int foundIndex = checkDeclared(yyscope,$2);
                                     if(foundIndex == -1)
                                     {
-                                        insertSymbolEntry($2 , yylineno, @2.first_column, yyscope, $3, doldol,findSize($3));   
+                                        char* curType = DetermineType(doldol);
+                                        if(strcmp(curType, $3) == 0 || strcmp(curType,"expr")==0)
+                                        {
+                                            insertSymbolEntry($2 , yylineno, @2.first_column, yyscope, $3, doldol,findSize($3));   
+                                        }
+                                        else if(strcmp($3,"float")==0 && strcmp(curType,"int")==0)
+                                        {
+                                            insertSymbolEntry($2 , yylineno, @2.first_column, yyscope, "float", doldol,findSize("float"));
+                                        } 
+                                        else
+                                        {
+                                            printf("\033[0;31mError at line number %d\n\033[0;37m Cannot use %s (type untyped %s) as type %s in assignment\n\n", yylineno, doldol, curType, $3);
+                                        }
                                     }
 
                                     else
@@ -415,15 +452,87 @@ variableDeclaration             : T_VAR T_IDENTIFIER type T_ASSIGN {strcpy(doldo
                                 }
                                 ;
 
-arrayDeclaration                : T_VAR T_IDENTIFIER T_BRACKET_OPEN arraylength T_BRACKET_CLOSE type T_CURLY_OPEN arrayvalues T_CURLY_CLOSE semi
-                                | T_IDENTIFIER T_WALRUS T_BRACKET_OPEN arraylength T_BRACKET_CLOSE type T_CURLY_OPEN arrayvalues T_CURLY_CLOSE semi
+arrayDeclaration                : T_VAR T_IDENTIFIER T_BRACKET_OPEN {strcpy(doldol,"");} arraylength T_BRACKET_CLOSE type T_CURLY_OPEN arrayvalues T_CURLY_CLOSE semi
+                                {
+                                    char arrayvalues[100];
+                                    strcpy(arrayvalues,"{");
+                                    strcat(arrayvalues,$9);
+                                    strcat(arrayvalues,"}");
+                                    AddQuadruple("=",arrayvalues,"",$2,resulttemp);
+
+                                    int foundIndex = checkDeclared(yyscope, $2);
+                                    if(foundIndex != -1)
+                                    {
+                                        printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m Redeclared in this block.\n\n", yylineno, $2);
+                                    }
+
+                                    else
+                                    {
+                                        char temp[100];
+                                        strcpy(temp,$9);
+                                        int istypeOK = checkArrayValType(temp,$7);
+                                        if(istypeOK)
+                                        {
+                                            char size[100];
+                                            sprintf(size, "%d", atoi(doldol)*atoi(findSize($7)));
+                                            insertSymbolEntry($2 , yylineno, @2.first_column, yyscope, $7, $9,size);  
+                                        }
+                                        else 
+                                        {
+                                            printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m array value(s) do not match array type.\n\n", yylineno, $9);
+                                        }
+                                    }
+                                }
+                                | T_IDENTIFIER T_WALRUS T_BRACKET_OPEN {strcpy(doldol,"");} arraylength T_BRACKET_CLOSE type T_CURLY_OPEN arrayvalues T_CURLY_CLOSE semi
+                                {
+                                    char temp[100];
+                                    strcpy(temp,$9);
+                                    char arrayvalues[100];
+                                    strcpy(arrayvalues,"{");
+                                    strcat(arrayvalues,$9);
+                                    strcat(arrayvalues,"}");
+                                    AddQuadruple(":=",arrayvalues,"",$1,resulttemp);
+
+                                    int foundIndex = checkDeclared(yyscope, $1);
+                                    if(foundIndex != -1)
+                                    {
+                                        printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m Redeclared in this block.\n\n", yylineno, $1);
+                                    }
+
+                                    else
+                                    {
+                                        
+                                        int istypeOK = checkArrayValType(temp,$7);
+                                        
+                                        if(istypeOK)
+                                        {
+                                            char size[100];
+                                            sprintf(size, "%d", atoi(doldol)*atoi(findSize($7)));
+                                            insertSymbolEntry($1 , yylineno, @1.first_column, yyscope, $7, $9,size);  
+                                        }
+                                        else 
+                                        {
+                                            printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m array value(s) do not match array type.\n\n", yylineno, $9);
+                                        }
+                                    }
+
+                                }
                                 ;
  
 arraylength                     : arithmeticExpression
                                 ;
 
 arrayvalues                     : value
-                                | arrayvalues T_COMMA value 
+                                {
+                                    strcpy($$,$1);
+                                }
+                                | arrayvalues T_COMMA value
+                                {
+                                    char temp[100];
+                                    strcpy(temp,",");
+                                    strcat(temp,$3);
+                                    strcat($$,temp);
+                                } 
                                 ;
 
 value          	                : T_INTEGER
@@ -459,9 +568,8 @@ variableAssignment              : T_IDENTIFIER T_ASSIGN {strcpy(doldol,"");} str
                                         char* curType = DetermineType(doldol);
                                         printf("\nTYPE: %s %s\n",curType,SymbolTable[foundIndex].type);
 
-                                        if(strcmp(SymbolTable[foundIndex].type, curType) == 0 || strcmp(curType,"expr")==0)
+                                        if(strcmp(SymbolTable[foundIndex].type, curType) == 0 || strcmp(curType,"expr")==0 || strcmp(SymbolTable[foundIndex].type,"float")==0 && strcmp(curType,"int")==0)
                                         {
-                            
                                             updateSymbolEntry($1, yylineno, @1.first_column, yyscope, SymbolTable[foundIndex].type, doldol);
                                         }
                                         else if(strcmp(SymbolTable[foundIndex].type,"expr")==0)
@@ -476,7 +584,27 @@ variableAssignment              : T_IDENTIFIER T_ASSIGN {strcpy(doldol,"");} str
                                 }
                                 ;
 
-arrayAssignment                 : T_IDENTIFIER T_BRACKET_OPEN arithmeticExpression T_BRACKET_CLOSE T_ASSIGN strexpressions semi
+arrayAssignment                 : T_IDENTIFIER T_BRACKET_OPEN arithmeticExpression T_BRACKET_CLOSE T_ASSIGN {strcpy(doldol,"");} strexpressions semi
+                                {
+                                    int foundIndex = searchSymbol(yyscope, $1);
+                                    if(foundIndex == -1)
+                                    {
+                                        printf("\033[0;31mError at line number %d\n\033[0;37m ReferenceError : assignment to undeclared variable \033[0;35m%s\033[0;37m\n\n", yylineno, $1);
+                                    }
+                                    else
+                                    {
+                                        
+                                        GenerateTemp("*",findSize(SymbolTable[foundIndex].type),$3,resulttemp);
+                                        AddQuadruple("[]=",resulttemp,doldol,$1,resulttemp);
+                   
+                                        char* curType =  DetermineType($7);
+
+                                        if(strcmp(curType, SymbolTable[foundIndex].type) != 0)
+                                        {
+                                            printf("\033[0;31mError at line number %d\n\033[0;37m Type Mismatch \033[0;35m%s\033[0;37m\n\n", yylineno, $1);   
+                                        }
+                                    }
+                                }
                                 ;
 %%
 
@@ -637,8 +765,14 @@ int main(int argc, char * argv[])
             else if(strcmp(QUAD[i].op,"GOTO")==0){
                 printf("\n\t\t %s %s",QUAD[i].op, QUAD[i].result);
             }
-            else if(strcmp(QUAD[i].op,"=")==0){
+            else if(strcmp(QUAD[i].op,"=")==0 || strcmp(QUAD[i].op,":=")==0){
                 printf("\n\t\t %s %s %s",QUAD[i].result, QUAD[i].op,QUAD[i].arg1 );
+            }
+            else if(strcmp(QUAD[i].op,"[]=")==0){
+                printf("\n\t\t %s[%s] = %s",QUAD[i].result,QUAD[i].arg1,QUAD[i].arg2);
+            }
+            else if(strcmp(QUAD[i].op,"=[]")==0){
+                printf("\n\t\t %s = %s[%s]",QUAD[i].result,QUAD[i].arg1,QUAD[i].arg2);
             }
             else{
             printf("\n\t\t %s = %s %s %s",QUAD[i].result,QUAD[i].arg1,QUAD[i].op,QUAD[i].arg2);

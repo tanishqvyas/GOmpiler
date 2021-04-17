@@ -1,26 +1,27 @@
-+ 5.4 6.4 t0
-= t0  a
-= 10  b
+= {1,2,3,4}  a
+* 4 2 t0
+[]= t0 2 a
+* 4 3 t1
+=[] a t1 t2
++ 4 t2 t3
+= t3  i
+= 7  x
+:= 4  y
 label   L0
-== a 1 t1
-if t1 TRUE L1
+== x 4 t4
+if t4 TRUE L1
 GOTO   L2
 label   L1
-+ a 1 t2
-= t2  a
+= y  x
 GOTO   L4
 label   L2
-== a 2 t3
-if t3 TRUE L3
+== x 7 t5
+if t5 TRUE L3
 GOTO   L4
 label   L3
-+ b 1 t4
-= t4  a
+= x  y
+GOTO   L4
++ x y t6
+= t6  x
 GOTO   L4
 label   L4
-label   L5
-= 10  c
-> a 4 t5
-if t5 TRUE L6
-GOTO   L5
-label   L6

@@ -107,6 +107,7 @@ int searchSymbol(int curScope, char *token)
 {
     for (int i = 0; i < symbolCount; ++i)
     {
+        printf("IN TABLE SCOPE%d %d\n",SymbolTable[i].tokenScope,curScope);
         if ((strcmp(SymbolTable[i].token, token) == 0) && (SymbolTable[i].tokenScope <= curScope))
         {
             return i;
@@ -175,6 +176,26 @@ void updateSymbolEntry(char *token, int lineNumber, int startColumn, int tokenSc
         return;
     //}
 }
+
+
+int checkArrayValType(char* arrayValues, char* type)
+{
+    char *token = strtok(arrayValues, ",");
+
+    while(token != NULL)
+    {
+        if(strcmp(type, DetermineType(token)) != 0)
+        {
+            return 0;
+        }
+
+        token = strtok(NULL, ",");
+
+    }
+
+    return 1;
+}
+
 
 void printSymbolTable()
 {

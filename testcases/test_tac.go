@@ -2,20 +2,19 @@ package main
 import "fmt"
 func main()
 {
-	var a = 5.4+6.4;
-	var b float64 = 10
-	//b=5+32*4
-	switch a
-	{
-	case 1:
-		var a int=a+1
-	case 2:
-		a=b+1
-	}
+	var a[4]int{1,2,3,4}
+	a[2]=2
+	var i int = 4+ a[3]
 
-	repeat{
-		var c int =10;
-		//a=5
-	}until(a>4)
-	
+	var x int =7
+	y:=4
+	switch x
+	{
+	case 4:
+		x=y
+	case 7:
+		y=x
+	default:
+		x=x+y
+	}
 }
