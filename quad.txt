@@ -1,0 +1,26 @@
++ 5.4 6.4 t0
+= t0  a
+= 10  b
+label   L0
+== a 1 t1
+if t1 TRUE L1
+GOTO   L2
+label   L1
++ a 1 t2
+= t2  a
+GOTO   L4
+label   L2
+== a 2 t3
+if t3 TRUE L3
+GOTO   L4
+label   L3
++ b 1 t4
+= t4  a
+GOTO   L4
+label   L4
+label   L5
+= 10  c
+> a 4 t5
+if t5 TRUE L6
+GOTO   L5
+label   L6

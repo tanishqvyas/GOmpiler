@@ -29,6 +29,9 @@
         int top;
     }stk;
 
+    int labels[100];
+    int labelIndex=0;
+
     struct switches{
         char switchvalue[100];
         int index;
@@ -38,6 +41,7 @@
     
     int recentswitch=0,test;
     int Index=0,tIndex=0,StNo,Ind,Ind2,Ind3,tInd;
+    int tacLines=0;
     char resulttemp[10];
     void AddQuadruple(char op[5],char arg1[10],char arg2[10],char result[10],char lhs[10]);
     void GenerateTemp(char op[5],char arg1[10],char arg2[10],char result[10]);
@@ -46,10 +50,12 @@
     void repeatUntilGen(char arg1[100]);
     void push(int data);
     int pop();
-    int findSize(char type[100]);
+    void createLabel();
+    char doldol[100];
+    
 %}
 %locations
-%union { char *str; }
+%union { char *str;  }
 %start program
 
 %token T_PACKAGE T_MAIN T_FUNC T_PRINT T_VAR T_RETURN
@@ -68,7 +74,7 @@
 %token <str> T_NOTEQ T_COMP T_LTE T_GTE T_AND T_OR T_BNOT T_LT T_GT
 %token <str> T_INT T_STR T_BOOL T_FLT64
 
-%type <str> variableAssignment variableDeclaration strexpressions number expressions arithmeticExpression relationalExpression logicalExpression relationalOperator
+%type <str> strexpressions number expressions arithmeticExpression relationalExpression logicalExpression relationalOperator
 %type <str> L M N T F switchValue type
 
 %%
@@ -182,6 +188,7 @@ switchCaseStatements            : switchCaseStatement
 switchCaseStatement             :T_CASE
                                 {
                                     push(Index);
+                                    createLabel();
                                 } 
                                 expressions T_COLON
                                 {
@@ -207,6 +214,7 @@ fallthroughStatement            : T_FALLTHROUGH
 
 expressions                     : arithmeticExpression
                                 {
+                                    
                                     strcpy($$,$1);
                                 }
                                 | relationalExpression
@@ -219,13 +227,13 @@ expressions                     : arithmeticExpression
                                 }
                                 ;
 
-arithmeticExpression            : arithmeticExpression T_PLUS T
+arithmeticExpression            : arithmeticExpression {strcat(doldol,"+");}T_PLUS T
                                 {
-                                    GenerateTemp("+",$1,$3,$$);
+                                    GenerateTemp("+",$1,$4,$$);
                                 }
-                                | arithmeticExpression T_MINUS T
+                                | arithmeticExpression {strcat(doldol,"-");} T_MINUS T
                                 {
-                                    GenerateTemp("-",$1,$3,$$);
+                                    GenerateTemp("-",$1,$4,$$);
                                 }
                                 | T
                                 {
@@ -233,17 +241,17 @@ arithmeticExpression            : arithmeticExpression T_PLUS T
                                 }
                                 ;
 
-T                               : T T_MUL F
+T                               : T {strcat(doldol,"*");} T_MUL F
                                 {
-                                    GenerateTemp("*",$1,$3,$$);
+                                    GenerateTemp("*",$1,$4,$$);
                                 }
-                                | T T_DIV F
+                                | T {strcat(doldol,"/");} T_DIV F
                                 {
-                                    GenerateTemp("/",$1,$3,$$);
+                                    GenerateTemp("/",$1,$4,$$);
                                 }
-                                | T T_MOD F
+                                | T  {strcat(doldol,"%");} T_MOD F
                                 {
-                                    GenerateTemp("%",$1,$3,$$);
+                                    GenerateTemp("%",$1,$4,$$);
                                 }
                                 | F
                                 {
@@ -251,13 +259,14 @@ T                               : T T_MUL F
                                 }
                                 ;
 
-F                               : T_PAREN_OPEN arithmeticExpression T_PAREN_CLOSE
+F                               : {strcat(doldol,"(");}T_PAREN_OPEN arithmeticExpression {strcat(doldol,")");}T_PAREN_CLOSE
                                 {
-                                    strcpy($$,$2);
+                                    strcpy($$,$3);
                                 }
-                                | T_IDENTIFIER
+                                | T_IDENTIFIER{strcat(doldol,$1);}
                                 | number
                                 {
+                                    strcat(doldol,$1);
                                     strcpy($$,$1);
                                 }
                                 ;
@@ -266,13 +275,14 @@ number                          : T_INTEGER
                                 | T_FLOAT64
                                 ;
 
-relationalExpression            : arithmeticExpression relationalOperator arithmeticExpression
+relationalExpression            : arithmeticExpression relationalOperator {strcat(doldol,$2);} arithmeticExpression
                                 {
-                                    GenerateTemp($2,$1,$3,$$);
+                                    GenerateTemp($2,$1,$4,$$);
                                 }
-                                | T_STRING relationalOperator T_STRING
+                                | T_STRING {strcat(doldol,$1);} relationalOperator {strcat(doldol,$3);} T_STRING
                                 {
-                                    GenerateTemp($2,$1,$3,$$);
+                                    strcat(doldol,$5);
+                                    GenerateTemp($3,$1,$5,$$);
                                 }
                                 | T_TRUE
                                 | T_FALSE
@@ -286,9 +296,9 @@ relationalOperator              : T_NOTEQ
                                 | T_GT
                                 ;
 
-logicalExpression               : T_BNOT L
+logicalExpression               : T_BNOT {strcat(doldol,$1);} L
                                 {
-                                    GenerateTemp("!",$2,"",$$);
+                                    GenerateTemp("!",$3,"",$$);
                                 }
                                 | L
                                 {
@@ -296,9 +306,9 @@ logicalExpression               : T_BNOT L
                                 }
                                 ;
 
-L                               : L T_AND M
+L                               : L T_AND {strcat(doldol,$2);} M
                                 {
-                                    GenerateTemp("AND",$1,$3,$$);
+                                    GenerateTemp("AND",$1,$4,$$);
                                 }
                                 | M
                                 {
@@ -306,9 +316,9 @@ L                               : L T_AND M
                                 }
                                 ;
                        
-M                               : M T_OR N
+M                               : M T_OR {strcat(doldol,$2);} N
                                 {
-                                    GenerateTemp("OR",$1,$3,$$);
+                                    GenerateTemp("OR",$1,$4,$$);
                                 }
                                 | N
                                 {
@@ -316,31 +326,32 @@ M                               : M T_OR N
                                 }
                                 ;
 
-N                               : T_PAREN_OPEN relationalExpression T_PAREN_CLOSE
+N                               : T_PAREN_OPEN {strcat(doldol,"(");} relationalExpression T_PAREN_CLOSE
                                 {
-                                    strcpy($$,$2);
+                                    strcpy($$,$3);
+                                    strcat(doldol,")");
                                 }
                                 ;
 
 
-repeatUntilStatement            : T_REPEAT T_CURLY_OPEN {push(Index);} statements T_CURLY_CLOSE T_UNTIL expressions semi
+repeatUntilStatement            : T_REPEAT T_CURLY_OPEN { push(Index);createLabel();} statements T_CURLY_CLOSE T_UNTIL expressions semi
                                 {
                                     repeatUntilGen($7);
                                 }
-                                | T_REPEAT {push(Index);} statement T_UNTIL expressions semi
+                                | T_REPEAT {push(Index);createLabel(); } statement T_UNTIL expressions semi
                                 {
                                     repeatUntilGen($5);
                                 }
                                 ;
 
-variableDeclaration             : T_VAR T_IDENTIFIER type T_ASSIGN strexpressions semi
+variableDeclaration             : T_VAR T_IDENTIFIER type T_ASSIGN {strcpy(doldol,"");} strexpressions semi
                                 {
-                                    AddQuadruple("=",$5,"",$2,$$);
+                                    AddQuadruple("=",$6,"",$2,resulttemp);
 
                                     int foundIndex = checkDeclared(yyscope,$2);
                                     if(foundIndex == -1)
                                     {
-                                        insertSymbolEntry($2 , yylineno, @2.first_column, yyscope, $3, $5,findSize($3));   
+                                        insertSymbolEntry($2 , yylineno, @2.first_column, yyscope, $3, doldol,findSize($3));   
                                     }
 
                                     else
@@ -350,15 +361,57 @@ variableDeclaration             : T_VAR T_IDENTIFIER type T_ASSIGN strexpression
                                 }
                                 | T_VAR T_IDENTIFIER type semi
                                 {
-                                    strcpy($$,"");
+                                    int foundIndex = checkDeclared(yyscope,$2);
+                                    if(foundIndex == -1)
+                                    {
+                                        insertSymbolEntry($2 , yylineno, @2.first_column, yyscope, $3, "",findSize($3));   
+                                    }
+
+                                    else
+                                    {
+                                        printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m Redeclared in this block.\n\n", yylineno, $2);
+                                    }
                                 }
-                                | T_VAR T_IDENTIFIER T_ASSIGN strexpressions semi
+                                | T_VAR T_IDENTIFIER T_ASSIGN {strcpy(doldol,"");} strexpressions semi
                                 {
-                                    AddQuadruple("=",$4,"",$2,$$);
+                                    AddQuadruple("=",$5,"",$2,resulttemp);
+
+                                    int foundIndex = checkDeclared(yyscope, $2);
+                           
+                                    if(foundIndex == -1)
+                                    {
+                                        char* curType = DetermineType(doldol);
+                                        if(strcmp(curType,"expr")==0)
+                                        {
+                                           strcpy( curType,"expr");
+                                        }
+                                        insertSymbolEntry($2 , yylineno, @2.first_column, yyscope, curType, doldol, findSize(curType));
+                                           
+                                    }
+                                    else
+                                    {
+                                        printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m Redeclared in this block.\n\n", yylineno, $2);
+                                    }
                                 }
-                                | T_IDENTIFIER T_WALRUS strexpressions semi
+                                | T_IDENTIFIER T_WALRUS {strcpy(doldol,"");} strexpressions semi
                                 {
-                                    AddQuadruple(":=",$3,"",$1,$$);
+                                    AddQuadruple(":=",$4,"",$1,resulttemp);
+
+                                    int foundIndex = checkDeclared(yyscope, $1);
+                           
+                                    if(foundIndex == -1)
+                                    {
+                                        char* curType = DetermineType(doldol);
+                                        if(strcmp(curType,"expr")==0)
+                                        {
+                                           strcpy( curType,"expr");
+                                        }
+                                        insertSymbolEntry($1 , yylineno, @1.first_column, yyscope, curType, doldol, findSize(curType));
+                                    }
+                                    else
+                                    {
+                                        printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m Redeclared in this block.\n\n", yylineno, $1);
+                                    }
                                 }
                                 ;
 
@@ -382,6 +435,7 @@ value          	                : T_INTEGER
 
 strexpressions                  : T_STRING
                                 {
+                                    strcpy(doldol,$1);
                                     strcpy($$,$1);
                                 }
                                 | expressions
@@ -390,9 +444,9 @@ strexpressions                  : T_STRING
                                 }
                                 ;
 
-variableAssignment              : T_IDENTIFIER T_ASSIGN strexpressions semi
+variableAssignment              : T_IDENTIFIER T_ASSIGN {strcpy(doldol,"");} strexpressions semi
                                 {
-                                    AddQuadruple("=",$3,"",$1,$$);
+                                    AddQuadruple("=",$4,"",$1,resulttemp);
 
                                     int foundIndex = searchSymbol(yyscope, $1);
                            
@@ -402,16 +456,21 @@ variableAssignment              : T_IDENTIFIER T_ASSIGN strexpressions semi
                                     }
                                     else
                                     {
-                                        char* curType = DetermineType($3);
-                                        
+                                        char* curType = DetermineType(doldol);
+                                        printf("\nTYPE: %s %s\n",curType,SymbolTable[foundIndex].type);
 
-                                        if(strcmp(SymbolTable[foundIndex].type, curType) == 0)
+                                        if(strcmp(SymbolTable[foundIndex].type, curType) == 0 || strcmp(curType,"expr")==0)
                                         {
-                                            updateSymbolEntry($1, yylineno, @1.first_column, yyscope, SymbolTable[foundIndex].type, $3);
+                            
+                                            updateSymbolEntry($1, yylineno, @1.first_column, yyscope, SymbolTable[foundIndex].type, doldol);
+                                        }
+                                        else if(strcmp(SymbolTable[foundIndex].type,"expr")==0)
+                                        {
+                                            updateSymbolEntry($1, yylineno, @1.first_column, yyscope, curType, doldol);
                                         }
                                         else
                                         {
-                                            printf("\033[0;31mError at line number %d\n\033[0;37m Cannot use %s (type untyped %s) as type %s in assignment\n\n", yylineno, $3, curType, SymbolTable[foundIndex].type);
+                                            printf("\033[0;31mError at line number %d\n\033[0;37m Cannot use %s (type untyped %s) as type %s in assignment\n\n", yylineno, doldol, curType, SymbolTable[foundIndex].type);
                                         }
                                     }
                                 }
@@ -454,6 +513,16 @@ int pop()
 	return data;
 }
 
+
+void createLabel()
+{
+    labels[labelIndex]=Index;
+    strcpy(QUAD[Index].op,"label");
+	strcpy(QUAD[Index].arg1,"");
+	strcpy(QUAD[Index].arg2,"");
+	sprintf(QUAD[Index++].result,"L%d",labelIndex++);
+}
+
 void AddQuadruple(char op[5],char arg1[10],char arg2[10],char result[10],char lhs[10]){
 	strcpy(QUAD[Index].op,op);
 	strcpy(QUAD[Index].arg1,arg1);
@@ -473,41 +542,45 @@ void GenerateTemp(char op[5],char arg1[10],char arg2[10],char result[10]){
 void switchCaseGenerate(char arg1[10])
 {
     switches[recentswitch].cases+=1;
-    int temp=Index;
-    test=pop();
-    if (test!=Index)
-    {
-        Index=test;
-    }
     if(strcmp(switches[recentswitch].switchvalue,"")==0)
     {
         push(Index);
-        AddQuadruple("==",arg1,"FALSE","-1",resulttemp);
+        AddQuadruple("if",arg1,"TRUE","-1",resulttemp);
     }
     else
     {
         char result[100];
         GenerateTemp("==",switches[recentswitch].switchvalue,arg1,result);
         push(Index);
-        AddQuadruple("==",result,"FALSE","-1",resulttemp);
-    } 
-    Index=temp;
+        AddQuadruple("if",result,"TRUE","-1",resulttemp);
+    }
+    push(Index);
+    AddQuadruple("GOTO","","","-1",resulttemp);
+    push(Index);
+    createLabel();
 }
 
 void switchFillJumps(){
+    int afterstmts,label,iffail,ifpass,caselabel;
     int FailoverIndex=Index;
+    createLabel();
     if(switches[recentswitch].hasdefault==1)
     {
         FailoverIndex=pop();
-        sprintf(QUAD[FailoverIndex].result,"%d",Index);
+        strcpy(QUAD[FailoverIndex].result,QUAD[Index-1].result);
     }
     for(int i=0; i<switches[recentswitch].cases;++i)
     {
-        Ind=pop();
-        sprintf(QUAD[Ind].result,"%d",Index);
-        Ind=pop();
-        sprintf(QUAD[Ind].result,"%d",FailoverIndex);
-        FailoverIndex=Ind;
+        afterstmts=pop();
+        label=pop();
+        iffail=pop();
+        ifpass=pop();
+        caselabel=pop();
+
+        strcpy(QUAD[afterstmts].result,QUAD[Index-1].result);
+        strcpy(QUAD[iffail].result,QUAD[FailoverIndex].result);
+        strcpy(QUAD[ifpass].result,QUAD[label].result);
+        FailoverIndex=caselabel;
     }
     --recentswitch;
 }
@@ -515,38 +588,22 @@ void switchFillJumps(){
 void repeatUntilGen(char arg1[10])
 {
     push(Index);
-    AddQuadruple("==",arg1,"TRUE","-1",resulttemp);
+    AddQuadruple("if",arg1,"TRUE","-1",resulttemp);
 
+    
     push(Index);
     AddQuadruple("GOTO","","","-1",resulttemp);
-    
+    createLabel();
+
     Ind=pop();
     Ind2=pop();
     Ind3=pop();
-    sprintf(QUAD[Ind].result,"%d",Ind3);
-    sprintf(QUAD[Ind2].result,"%d",Index);
+    strcpy(QUAD[Ind].result,QUAD[Ind3].result);
+    strcpy(QUAD[Ind2].result,QUAD[Index-1].result);
 }
 
-int findSize(char type[100])
-{
-    
-    if(strcmp(type,"int") == 0)
-    {
-        return 4;
-    }
-    else if(strcmp(type,"float64") == 0)
-    {
-        return 8;
-    }
-    else if(strcmp(type,"string") == 0)
-    {
-        return 0;
-    }
-    else if(strcmp(type,"bool") == 0)
-    {
-        return 1;
-    }
-}
+
+
 
 int main(int argc, char * argv[])
 {
@@ -554,18 +611,43 @@ int main(int argc, char * argv[])
     yylloc.first_line=yylloc.last_line=1;
     yylloc.first_column=yylloc.last_column=0;
     printf("LINENO \t TYPE      \tTOKENNAME\n");
-    yyparse();
-    printf("\n\n\t\t -------------------------------------""\n\t\t \033[0;33mPos\033[0;36m Operator\033[0;35m \tArg1 \tArg2\033[0;32m \tResult\033[0;37m" "\n\t\t -------------------------------------");
+    int accepted=yyparse();
+    if(accepted==0 || valid!=0){
 
-    for(int i=0;i<Index;i++){
-        printf("\n\t\t \033[0;33m%d\033[0;36m\t %s\033[0;35m\t %s\t %s \033[0;32m\t%s\033[0;37m",i,QUAD[i].op,QUAD[i].arg1,QUAD[i].arg2,QUAD[i].result);
+        printSymbolTable();
+
+        printf("\n\n\t\t -------------------------------------""\n\t\t \033[0;33mPos\033[0;36m Operator\033[0;35m \tArg1 \tArg2\033[0;32m \tResult\033[0;37m" "\n\t\t -------------------------------------");
+
+        FILE *out=fopen("quad.txt","w");
+        for(int i=0;i<Index;i++){
+            printf("\n\t\t \033[0;33m%d\033[0;36m\t %s\033[0;35m\t %s\t %s \033[0;32m\t%s\033[0;37m",i,QUAD[i].op,QUAD[i].arg1,QUAD[i].arg2,QUAD[i].result);
+            fprintf(out, "%s %s %s %s\n",QUAD[i].op, QUAD[i].arg1, QUAD[i].arg2, QUAD[i].result);
+        }
+
+        fclose(out);
+        printf("\n");
+
+        for(int i=0;i<Index;i++){
+            if(strcmp(QUAD[i].op,"label")==0){
+                printf("\n\t\t %s:",QUAD[i].result);
+            }
+            else if(strcmp(QUAD[i].op,"if")==0){
+                printf("\n\t\t %s %s == %s GOTO %s",QUAD[i].op,QUAD[i].arg1,QUAD[i].arg2,QUAD[i].result);
+            }
+            else if(strcmp(QUAD[i].op,"GOTO")==0){
+                printf("\n\t\t %s %s",QUAD[i].op, QUAD[i].result);
+            }
+            else if(strcmp(QUAD[i].op,"=")==0){
+                printf("\n\t\t %s %s %s",QUAD[i].result, QUAD[i].op,QUAD[i].arg1 );
+            }
+            else{
+            printf("\n\t\t %s = %s %s %s",QUAD[i].result,QUAD[i].arg1,QUAD[i].op,QUAD[i].arg2);
+            }
+        }
+        printf("\n");
+	    
+        
     }
-    printf("\n");
-    if(valid==0)
-    {
-        printf("Syntax was Invalid!\n");
-    }
-    printSymbolTable();
     fclose(yyin);
     return 0;
 
