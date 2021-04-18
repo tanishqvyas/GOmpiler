@@ -1,27 +1,55 @@
-= {1,2,3,4}  a
-* 4 2 t0
-[]= t0 2 a
-* 4 3 t1
-=[] a t1 t2
-+ 4 t2 t3
-= t3  i
-= 7  x
-:= 4  y
+func begin add 
+Reparam a  
+Reparam b  
++ a b t0
+= t0  c
 label   L0
-== x 4 t4
-if t4 TRUE L1
+< c 5 t1
+== c t1 t2
+if t2 TRUE L1
 GOTO   L2
 label   L1
-= y  x
+return 5  
 GOTO   L4
 label   L2
-== x 7 t5
-if t5 TRUE L3
+> c 5 t3
+== c t3 t4
+if t4 TRUE L3
 GOTO   L4
 label   L3
-= x  y
-GOTO   L4
-+ x y t6
-= t6  x
+return c  
 GOTO   L4
 label   L4
+func end add 
+func begin main 
+= {1,2,3,4}  a
+* 4 2 t5
+[]= t5 2 a
+* 4 3 t6
+=[] a t6 t7
++ 4 t7 t8
+= t8  i
+param i  
+param 3  
+call add 2 t9
+= 7  x
+:= 4  y
+label   L5
+== x 4 t10
+if t10 TRUE L6
+GOTO   L7
+label   L6
+= y  x
+GOTO   L9
+label   L7
+== x 7 t11
+if t11 TRUE L8
+GOTO   L9
+label   L8
+= x  y
+GOTO   L9
++ x y t12
+= t12  x
+GOTO   L9
+label   L9
+func end main 

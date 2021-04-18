@@ -1,9 +1,9 @@
-
 f = open("quad.txt","r")
 taclines = f.readlines()
 taclength=len(taclines)
 taclines =[i.strip().split(" ") for i in taclines]
 labels = {taclines[i][-1]:i for i in range(taclength) if taclines[i][0]=="label"}
+labels.update({taclines[i][1]:i for i in range(taclength) if taclines[i][1]=="begin"})
 leaderlines=[0]
 basicblocks=[]
 ops=['+','-','*','/','<','>','<=','>=','==','!=']
@@ -46,8 +46,9 @@ def constant_folding(block,comp=[]):
         return final_list,1
 
 
-
 for i in range(1,taclength):
+    if(taclines[i][1]=="begin"):
+        leaderlines.append(labels[taclines[i][1]])
     if(taclines[i][0]=="if" or taclines[i][0]=="GOTO"):
         lead=labels[taclines[i][3]]
         if(lead not in leaderlines):
@@ -64,7 +65,7 @@ for block in basicblocks:
     flag1 = 1
     flag2 = 1 
     n=1
-    print("Block",block)
+    #print("Block",block)
     const_prop_list,flag1 = constant_propagation(block)
     const_fold_list,flag2 = constant_folding(const_prop_list)
 
@@ -73,6 +74,8 @@ for block in basicblocks:
         const_prop_list,flag1 = constant_propagation(const_fold_list,const_prop_list)
         const_fold_list,flag2 = constant_folding(const_prop_list,const_fold_list)
         n=n+1
-    
+    #temp_const_propagation(const_fold_list)
 
-    print(const_fold_list)
+    for i in const_fold_list:
+        print(" ".join(i))
+    

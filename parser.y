@@ -12,16 +12,17 @@
     extern int yylineno;
     //extern YYLTYPE yylloc;
     extern char* yytext;
+    extern int functionid;
     int yyscope=0;
     /* 0 implies global yyscope */
     int flag=0;
     int valid=1;
     
     struct quad{
-        char op[5];
-        char arg1[10];
-        char arg2[10];
-        char result[10];
+        char op[100];
+        char arg1[100];
+        char arg2[100];
+        char result[100];
     }QUAD[100];
     
     struct stack{
@@ -42,9 +43,9 @@
     int recentswitch=0,test;
     int Index=0,tIndex=0,StNo,Ind,Ind2,Ind3,tInd;
     int tacLines=0;
-    char resulttemp[10];
-    void AddQuadruple(char op[5],char arg1[10],char arg2[10],char result[10],char lhs[10]);
-    void GenerateTemp(char op[5],char arg1[10],char arg2[10],char result[10]);
+    char resulttemp[100];
+    void AddQuadruple(char op[100],char arg1[100],char arg2[100],char result[100],char lhs[100]);
+    void GenerateTemp(char op[100],char arg1[100],char arg2[100],char result[100]);
     void switchCaseGenerate(char arg1[100]);
     void switchFillJumps();
     void repeatUntilGen(char arg1[100]);
@@ -52,6 +53,7 @@
     int pop();
     void createLabel();
     char doldol[100];
+    int paramscount;
     
 %}
 %locations
@@ -75,7 +77,7 @@
 %token <str> T_INT T_STR T_BOOL T_FLT64
 
 %type <str> strexpressions number expressions arithmeticExpression relationalExpression logicalExpression relationalOperator
-%type <str> L M N T F switchValue type value arrayvalues
+%type <str> L M N T F switchValue type value arrayvalues parameter parameterlist parameters returntype funccall argslist arg args
 
 %%
 
@@ -108,29 +110,76 @@ body                            :  mainFunctionDefinition
                                 ;
 
 
-mainFunctionDefinition          : T_FUNC T_MAIN T_PAREN_OPEN T_PAREN_CLOSE compoundStatement                 
+mainFunctionDefinition          : T_FUNC T_MAIN {++functionid;functions[functionid].symbolCount=0;AddQuadruple("func","begin","main","",resulttemp);} T_PAREN_OPEN T_PAREN_CLOSE
+                                {
+                                    functions[functionid].funcid=functionid;
+                                    strcpy(functions[functionid].name,"main");
+                                    strcpy(functions[functionid].params,"");
+                                    strcpy(functions[functionid].returntype,"");
+                                }
+                                compoundStatement
+                                {
+                                    AddQuadruple("func","end","main","",resulttemp);
+                                }               
                                 ;
 
 functionDefinitions             : functionDefinition
                                 | functionDefinitions functionDefinition
                                 ;
 
-functionDefinition              : T_FUNC T_IDENTIFIER T_PAREN_OPEN parameterlist T_PAREN_CLOSE returntype compoundStatement
+functionDefinition              : T_FUNC T_IDENTIFIER {++functionid;functions[functionid].symbolCount=0;AddQuadruple("func","begin",$2,"",resulttemp);} T_PAREN_OPEN parameterlist T_PAREN_CLOSE returntype 
+                                {
+                                    functions[functionid].funcid=functionid;
+                                    strcpy(functions[functionid].name,$2);
+                                    strcpy(functions[functionid].params,$5);
+                                    strcpy(functions[functionid].returntype,$7);
+
+                                }
+                                compoundStatement
+                                {
+                                    AddQuadruple("func","end",$2,"",resulttemp);
+                                }
                                 ;
 
 parameterlist                   : parameters
-                                | /* EPSILON */
+                                { strcpy($$,$1); }
+                                | {strcpy($$,"");}
                                 ;
 
 parameters                      : parameter
+                                {
+                                    strcpy($$,$1);
+                                }
                                 | parameters T_COMMA parameter
+                                {
+                                    char temp[100];
+                                    strcpy(temp,",");
+                                    strcat(temp,$3);
+                                    strcat($$,temp);
+                                }
                                 ;
 
 parameter                       : T_IDENTIFIER type
+                                {
+                                    AddQuadruple("Reparam",$1,"","",resulttemp);
+                                    int foundIndex = checkDeclared(yyscope+1,$1);
+                                    if(foundIndex == -1)
+                                    {
+                                        insertSymbolEntry($1, yylineno, @1.first_column, yyscope+1, $2,"",findSize($2));
+                                    }
+                                    else
+                                    {
+                                        printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m Redeclared in this block.\n\n", yylineno, $1);
+                                        valid=0;
+                                    }
+                                    strcpy($$,$1);
+                                    strcat($$," ");
+                                    strcat($$,$2);
+                                }
                                 ;
 
-returntype                      : type
-                                | /* EPSILON */
+returntype                      : type {strcpy($$,$1);}
+                                | {strcpy($$,"");}
                                 ;
 
 type                            : T_INT    
@@ -139,7 +188,10 @@ type                            : T_INT
                                 | T_BOOL 
                                 ;
 
-returnStatement                 : T_RETURN expressions semi
+returnStatement                 : T_RETURN {strcpy(doldol,"");} expressions semi
+                                {
+                                    AddQuadruple("return",doldol,"","",resulttemp);
+                                }
                                 ;
 
 compoundStatement               : T_CURLY_OPEN{++yyscope;} statements {--yyscope;}T_CURLY_CLOSE
@@ -158,6 +210,7 @@ statement                       : printStatement
                                 | arrayAssignment
                                 | switchStatement
                                 | repeatUntilStatement
+                                | funccall
                                 ;
 
 printStatement                  : T_FMT T_DOT T_PRINT T_PAREN_OPEN T_STRING T_PAREN_CLOSE semi
@@ -168,6 +221,16 @@ switchStatement                 : T_SWITCH switchValue
                                     recentswitch++;
                                     switches[recentswitch].index=Index;
                                     sprintf(switches[recentswitch].switchvalue,"%s",$2);
+                                }
+                                T_CURLY_OPEN {++yyscope;} switchCaseStatements {--yyscope;}T_CURLY_CLOSE
+                                {
+                                    switchFillJumps();
+                                }
+                                | T_SWITCH T_PAREN_OPEN switchValue T_PAREN_CLOSE
+                                {
+                                    recentswitch++;
+                                    switches[recentswitch].index=Index;
+                                    sprintf(switches[recentswitch].switchvalue,"%s",$3);
                                 }
                                 T_CURLY_OPEN {++yyscope;} switchCaseStatements {--yyscope;}T_CURLY_CLOSE
                                 {
@@ -285,7 +348,7 @@ F                               : {strcat(doldol,"(");}T_PAREN_OPEN arithmeticEx
                                     }
                                     else
                                     {
-                                        GenerateTemp("*",findSize(SymbolTable[foundIndex].type),$4,resulttemp);
+                                        GenerateTemp("*",findSize(SymbolTable[functionid][foundIndex].type),$4,resulttemp);
                                         GenerateTemp("=[]",$1,resulttemp,$$);
                                     }
                                 }
@@ -544,11 +607,16 @@ value          	                : T_INTEGER
 
 strexpressions                  : T_STRING
                                 {
-                                    strcpy(doldol,$1);
+                                    strcat(doldol,$1);
                                     strcpy($$,$1);
                                 }
                                 | expressions
                                 {
+                                    strcpy($$,$1);
+                                }
+                                | funccall
+                                {
+                                    strcat(doldol,$1);
                                     strcpy($$,$1);
                                 }
                                 ;
@@ -566,19 +634,18 @@ variableAssignment              : T_IDENTIFIER T_ASSIGN {strcpy(doldol,"");} str
                                     else
                                     {
                                         char* curType = DetermineType(doldol);
-                                        printf("\nTYPE: %s %s\n",curType,SymbolTable[foundIndex].type);
 
-                                        if(strcmp(SymbolTable[foundIndex].type, curType) == 0 || strcmp(curType,"expr")==0 || strcmp(SymbolTable[foundIndex].type,"float")==0 && strcmp(curType,"int")==0)
+                                        if(strcmp(SymbolTable[functionid][foundIndex].type, curType) == 0 || strcmp(curType,"expr")==0 || strcmp(SymbolTable[functionid][foundIndex].type,"float")==0 && strcmp(curType,"int")==0)
                                         {
-                                            updateSymbolEntry($1, yylineno, @1.first_column, yyscope, SymbolTable[foundIndex].type, doldol);
+                                            updateSymbolEntry($1, yylineno, @1.first_column, yyscope, SymbolTable[functionid][foundIndex].type, doldol);
                                         }
-                                        else if(strcmp(SymbolTable[foundIndex].type,"expr")==0)
+                                        else if(strcmp(SymbolTable[functionid][foundIndex].type,"expr")==0)
                                         {
                                             updateSymbolEntry($1, yylineno, @1.first_column, yyscope, curType, doldol);
                                         }
                                         else
                                         {
-                                            printf("\033[0;31mError at line number %d\n\033[0;37m Cannot use %s (type untyped %s) as type %s in assignment\n\n", yylineno, doldol, curType, SymbolTable[foundIndex].type);
+                                            printf("\033[0;31mError at line number %d\n\033[0;37m Cannot use %s (type untyped %s) as type %s in assignment\n\n", yylineno, doldol, curType, SymbolTable[functionid][foundIndex].type);
                                         }
                                     }
                                 }
@@ -594,18 +661,78 @@ arrayAssignment                 : T_IDENTIFIER T_BRACKET_OPEN arithmeticExpressi
                                     else
                                     {
                                         
-                                        GenerateTemp("*",findSize(SymbolTable[foundIndex].type),$3,resulttemp);
+                                        GenerateTemp("*",findSize(SymbolTable[functionid][foundIndex].type),$3,resulttemp);
                                         AddQuadruple("[]=",resulttemp,doldol,$1,resulttemp);
                    
                                         char* curType =  DetermineType($7);
 
-                                        if(strcmp(curType, SymbolTable[foundIndex].type) != 0)
+                                        if(strcmp(curType, SymbolTable[functionid][foundIndex].type) != 0)
                                         {
                                             printf("\033[0;31mError at line number %d\n\033[0;37m Type Mismatch \033[0;35m%s\033[0;37m\n\n", yylineno, $1);   
                                         }
                                     }
                                 }
                                 ;
+
+funccall                        : T_IDENTIFIER {paramscount=0;} T_PAREN_OPEN argslist T_PAREN_CLOSE semi
+                                {
+
+                                    int foundIndex = searchFunction($1);
+                                    if(foundIndex == -1)
+                                    {
+                                        printf("\033[0;31mError at line number %d\n\033[0;37m ReferenceError : access to undefined function \033[0;35m%s\033[0;37m\n\n", yylineno, $1);
+                                    }
+                                    
+                                    char temp[100];
+                                    sprintf(temp,"%d",paramscount);
+                                    GenerateTemp("call",$1,temp,$$);
+                                    
+                                    strcpy($$,$1);
+                                    strcat($$,"(");
+                                    strcat($$,$4);
+                                    strcat($$,")");
+                                }
+                                ;
+
+argslist                        : args
+                                { 
+                                    strcpy($$,$1);
+                                }
+                                | {strcpy($$,"");}
+                                ;
+
+args                            : arg
+                                {
+                                    strcpy($$,$1);
+                                }
+                                | args T_COMMA arg
+                                {
+                                    char temp[100];
+                                    strcpy(temp,",");
+                                    strcat(temp,$3);
+                                    strcat($$,temp);
+                                }
+                                ;
+
+arg                             : T_IDENTIFIER
+                                {
+                                    ++paramscount;
+                                    AddQuadruple("param",$1,"","",resulttemp);
+                                    int foundIndex = searchSymbol(yyscope,$1);
+                                    if(foundIndex == -1)
+                                    {
+                                        printf("\033[0;31mError at line number %d\n\033[0;37m ReferenceError : access to undeclared variable \033[0;35m%s\033[0;37m\n\n", yylineno, $1);
+                                    }
+                                    strcpy($$,$1);
+                                }
+                                | value
+                                {
+                                    ++paramscount;
+                                    AddQuadruple("param",$1,"","",resulttemp);
+                                    strcpy($$,$1);
+                                }
+                                ;
+
 %%
 
 extern void yyerror(char* si)
@@ -651,7 +778,7 @@ void createLabel()
 	sprintf(QUAD[Index++].result,"L%d",labelIndex++);
 }
 
-void AddQuadruple(char op[5],char arg1[10],char arg2[10],char result[10],char lhs[10]){
+void AddQuadruple(char op[100],char arg1[100],char arg2[100],char result[100],char lhs[100]){
 	strcpy(QUAD[Index].op,op);
 	strcpy(QUAD[Index].arg1,arg1);
 	strcpy(QUAD[Index].arg2,arg2);
@@ -659,7 +786,7 @@ void AddQuadruple(char op[5],char arg1[10],char arg2[10],char result[10],char lh
 	strcpy(lhs,QUAD[Index++].result);
 }
 
-void GenerateTemp(char op[5],char arg1[10],char arg2[10],char result[10]){
+void GenerateTemp(char op[100],char arg1[100],char arg2[100],char result[100]){
 	strcpy(QUAD[Index].op,op);
 	strcpy(QUAD[Index].arg1,arg1);
 	strcpy(QUAD[Index].arg2,arg2);
@@ -667,7 +794,7 @@ void GenerateTemp(char op[5],char arg1[10],char arg2[10],char result[10]){
 	strcpy(result,QUAD[Index++].result);
 }
 
-void switchCaseGenerate(char arg1[10])
+void switchCaseGenerate(char arg1[100])
 {
     switches[recentswitch].cases+=1;
     if(strcmp(switches[recentswitch].switchvalue,"")==0)
@@ -710,10 +837,15 @@ void switchFillJumps(){
         strcpy(QUAD[ifpass].result,QUAD[label].result);
         FailoverIndex=caselabel;
     }
+    strcpy(switches[recentswitch].switchvalue,"");
+    switches[recentswitch].index=0;
+    switches[recentswitch].cases=0;
+    switches[recentswitch].hasdefault=0;
     --recentswitch;
+
 }
 
-void repeatUntilGen(char arg1[10])
+void repeatUntilGen(char arg1[100])
 {
     push(Index);
     AddQuadruple("if",arg1,"TRUE","-1",resulttemp);
@@ -773,6 +905,15 @@ int main(int argc, char * argv[])
             }
             else if(strcmp(QUAD[i].op,"=[]")==0){
                 printf("\n\t\t %s = %s[%s]",QUAD[i].result,QUAD[i].arg1,QUAD[i].arg2);
+            }
+            else if(strcmp(QUAD[i].op,"func")==0){
+                printf("\n\t\t %s %s %s",QUAD[i].op,QUAD[i].arg1,QUAD[i].arg2);
+            }
+            else if(strcmp(QUAD[i].op,"Reparam")==0 || strcmp(QUAD[i].op,"param")==0 ){
+                printf("\n\t\t %s %s",QUAD[i].op,QUAD[i].arg1);
+            }
+            else if(strcmp(QUAD[i].op,"call")==0 || strcmp(QUAD[i].op,"param")==0 ){
+                printf("\n\t\t %s = %s %s , %s",QUAD[i].result,QUAD[i].op,QUAD[i].arg1,QUAD[i].arg2);
             }
             else{
             printf("\n\t\t %s = %s %s %s",QUAD[i].result,QUAD[i].arg1,QUAD[i].op,QUAD[i].arg2);
