@@ -141,7 +141,7 @@ void insertSymbolEntry(char *token, int lineNumber, int startColumn, int tokenSc
         strcpy(SymbolTable[functionid][functions[functionid].symbolCount].value, value);
         strcpy(SymbolTable[functionid][functions[functionid].symbolCount].length, length);
         if (DEBUG_MODE)
-            printf("\033[0;32mAdded a new Entry to Symbol Table.\033[0;37m\n");
+            printf("\033[0;32mAdded a new Entry to Symbol Table.\033[0;30m\n");
         ++functions[functionid].symbolCount;
     // }
 
@@ -150,7 +150,7 @@ void insertSymbolEntry(char *token, int lineNumber, int startColumn, int tokenSc
 
     //    strcpy(SymbolTable[foundIndex].value, value);
     //    if (DEBUG_MODE)
-            // printf("\033[0;32mIdenitifier exists. Symbol Table updated. %s\033[0;37m\n", value);
+            // printf("\033[0;32mIdenitifier exists. Symbol Table updated. %s\033[0;30m\n", value);
         // return;
     //}
 }
@@ -170,7 +170,7 @@ void updateSymbolEntry(char *token, int lineNumber, int startColumn, int tokenSc
     //    strcpy(SymbolTable[symbolCount].type, type);
     //    strcpy(SymbolTable[symbolCount].value, value);
     //    if (DEBUG_MODE)
-    //        printf("\033[0;32mAdded a new Entry to Symbol Table.\033[0;37m\n");
+    //        printf("\033[0;32mAdded a new Entry to Symbol Table.\033[0;30m\n");
     //    ++symbolCount;
     //}
 
@@ -180,7 +180,7 @@ void updateSymbolEntry(char *token, int lineNumber, int startColumn, int tokenSc
         strcpy(SymbolTable[functionid][foundIndex].type, type);
         strcpy(SymbolTable[functionid][foundIndex].length, findSize(type));
         if (DEBUG_MODE)
-            printf("\033[0;32mIdenitifier exists. Symbol Table updated.%s\033[0;37m\n", value);
+            printf("\033[0;32mIdenitifier exists. Symbol Table updated.%s\033[0;30m\n", value);
         return;
     //}
 }
@@ -222,22 +222,22 @@ void printSymbolTable()
 {
     for(int j=1;j<=functionid;++j)
     {
-        printf("\nFunction Name \t\033[0;35mReturn Type\033[0;33m\t\tParameters\tSymbolCount\033[0;37m\n");
-        printf("\n%s\t\033[0;35m%s\033[0;33m\t\t\t\t%s\t\t%d\033[0;37m\t\n",functions[j].name,functions[j].returntype,functions[j].params,functions[j].symbolCount);
+        printf("\nFunction Name \t\033[0;35mReturn Type\033[0;33m\t\tParameters\tSymbolCount\033[0;30m\n");
+        printf("\n%s\t\033[0;35m%s\033[0;33m\t\t\t\t%s\t\t%d\033[0;30m\t\n",functions[j].name,functions[j].returntype,functions[j].params,functions[j].symbolCount);
         if (functions[j].symbolCount == 0)
         {
             printf("\nSymbol Table for %s is empty\n",functions[j].name);
             return;
         }
         printf("\n\n_______________________________________________________________________________________________________________________________________\n");
-        printf("\t\t\t\t\t\t\t \033[0;31mSYMBOL TABLE for %s function\033[0;37m \n",functions[j].name);
+        printf("\t\t\t\t\t\t\t \033[0;31mSYMBOL TABLE for %s function\033[0;30m \n",functions[j].name);
         printf("_______________________________________________________________________________________________________________________________________\n");
-        printf("\nToken ID \033[0;35mToken\033[0;33m\t\t\t\tLineNumber\tStart Column\033[0;34m\tTokenScope\t\033[0;36mType\033[0;32m\t\tValue\033[0;37m\t\tLength\033[0;37m\n");
+        printf("\nToken ID \033[0;35mToken\033[0;33m\t\t\t\tLineNumber\tStart Column\033[0;34m\tTokenScope\t\033[0;36mType\033[0;32m\t\tValue\033[0;30m\t\tLength\033[0;30m\n");
         printf("---------------------------------------------------------------------------------------------------------------------------------------\n");
 
         for (int i = 0; i < functions[j].symbolCount; ++i)
         {
-            printf("[%d] \t\033[0;35m%s\033[0;33m\t\t\t\t%d\t\t%d\033[0;34m\t\t%d\t\t\033[0;36m%s\033[0;32m\t\t%s\033[0;37m\t\t%s\033[0;37m\n", SymbolTable[j][i].symbolID, SymbolTable[j][i].token, SymbolTable[j][i].lineNumber, SymbolTable[j][i].startColumn, SymbolTable[j][i].tokenScope, SymbolTable[j][i].type, SymbolTable[j][i].value, SymbolTable[j][i].length);
+            printf("[%d] \t\033[0;35m%s\033[0;33m\t\t\t\t%d\t\t%d\033[0;34m\t\t%d\t\t\033[0;36m%s\033[0;32m\t\t%s\033[0;30m\t\t%s\033[0;30m\n", SymbolTable[j][i].symbolID, SymbolTable[j][i].token, SymbolTable[j][i].lineNumber, SymbolTable[j][i].startColumn, SymbolTable[j][i].tokenScope, SymbolTable[j][i].type, SymbolTable[j][i].value, SymbolTable[j][i].length);
         }
     }
 }

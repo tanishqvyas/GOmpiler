@@ -39,7 +39,7 @@ identifier                  ({letter}|{underscore})({letter}|{digits}|{underscor
                         checkclosed();
                     }
 \*\/                {
-                        printf("\033[0;31mERROR at line number : %d\n \033[0;37m Dangling Comment \033[0;35m\n\n", yylineno);
+                        printf("\033[0;31mERROR at line number : %d\n \033[0;30m Dangling Comment \033[0;35m\n\n", yylineno);
                     }
 
  /* SPACE REMOVAL */
@@ -123,7 +123,7 @@ return                                  {if (DEBUG_MODE) print_token(yytext,KEYW
 false                   {if (DEBUG_MODE) print_token(yytext,LITERAL, yylineno); yylloc.first_column = yylloc.last_column+1; yylloc.last_column += strlen(yytext); yylval.str= strdup(yytext); return T_FALSE;}
 true                    {if (DEBUG_MODE) print_token(yytext,LITERAL, yylineno); yylloc.first_column = yylloc.last_column+1; yylloc.last_column += strlen(yytext); yylval.str= strdup(yytext); return T_TRUE;}
 {intNumber}                   {if (DEBUG_MODE) print_token(yytext,LITERAL, yylineno); yylloc.first_column = yylloc.last_column+1; yylloc.last_column += strlen(yytext); yylval.str= strdup(yytext); return T_INTEGER;}
-\"([^"\n])*(\n)([^"])*\" {if (DEBUG_MODE) print_token(yytext,LITERAL, yylineno); printf("\033[0;31mERROR at line number : %d\n \033[0;37m Invalid String : \033[0;35m%s\033[0;37m\n Strings cannot contain newlines. \n\n", yylineno, yytext);
+\"([^"\n])*(\n)([^"])*\" {if (DEBUG_MODE) print_token(yytext,LITERAL, yylineno); printf("\033[0;31mERROR at line number : %d\n \033[0;30m Invalid String : \033[0;35m%s\033[0;30m\n Strings cannot contain newlines. \n\n", yylineno, yytext);
                         int found=-1;
                         int first = -1;
                         for(int i =0;i<strlen(yytext);++i)
@@ -172,7 +172,7 @@ int yywrap(){
 
 void print_token(char* tokenname, char* type, int lineno)
 {
-    printf("\033[0;33m %d\t \033[0;36m[%s]\t\033[0;35m%s\t \033[0;37m\n", lineno, type, tokenname);
+    printf("\033[0;33m %d\t \033[0;36m[%s]\t\033[0;35m%s\t \033[0;30m\n", lineno, type, tokenname);
 }
 
 void checkclosed()
@@ -199,7 +199,7 @@ loop:
 	}
     else if(c==0)
     {
-        printf("\033[0;31mERROR at line number : %d\n \033[0;37m Unclosed Comment \033[0;35m\n\n", yylineno);
+        printf("\033[0;31mERROR at line number : %d\n \033[0;30m Unclosed Comment \033[0;35m\n\n", yylineno);
     }
     else
         return;
