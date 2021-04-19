@@ -48,7 +48,7 @@ label   L9
 param 3  
 param 5  
 call add 2 t8
-= add(3,5)  sum
+= t8  sum
 GOTO   L11
 label   L10
 GOTO   L11
@@ -61,15 +61,15 @@ label   L13
 + j 1 t9
 = t9  j
 > j 10 t10
-if t10 TRUE L14
-GOTO   L13
+if t10 TRUE L13
+GOTO   L14
 label   L14
 * 4 i t11
 []= t11 j array
 + i 1 t12
 = t12  i
 > i 3 t13
-if t13 TRUE L15
-GOTO   L12
+if t13 TRUE L12
+GOTO   L15
 label   L15
 func end main 

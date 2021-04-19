@@ -627,7 +627,6 @@ strexpressions                  : T_STRING
                                 }
                                 | funccall
                                 {
-                                    strcat(doldol,$1);
                                     strcpy($$,$1);
                                 }
                                 ;
@@ -693,6 +692,7 @@ funccall                        : T_IDENTIFIER {paramscount=0;} T_PAREN_OPEN arg
                                 {
 
                                     int foundIndex = searchFunction($1);
+                                    strcpy(doldol,$1);
                                     if(foundIndex == -1)
                                     {
                                         printf("\033[0;31mError at line number %d\n\033[0;30m ReferenceError : access to undefined function \033[0;35m%s\033[0;30m\n\n", yylineno, $1);
@@ -703,10 +703,11 @@ funccall                        : T_IDENTIFIER {paramscount=0;} T_PAREN_OPEN arg
                                     sprintf(temp,"%d",paramscount);
                                     GenerateTemp("call",$1,temp,resulttemp);
                                     
-                                    strcpy($$,$1);
-                                    strcat($$,"(");
-                                    strcat($$,$4);
-                                    strcat($$,")");
+                                    strcpy($$,resulttemp);
+                                    
+                                    strcat(doldol,"(");
+                                    strcat(doldol,$4);
+                                    strcat(doldol,")");
                                 }
                                 ;
 
@@ -871,13 +872,13 @@ void repeatUntilGen(char arg1[100])
     
     push(Index);
     AddQuadruple("GOTO","","","-1",resulttemp);
-    createLabel();
+    createLabel(); //out of loop label
 
-    Ind=pop();
-    Ind2=pop();
-    Ind3=pop();
-    strcpy(QUAD[Ind].result,QUAD[Ind3].result);
-    strcpy(QUAD[Ind2].result,QUAD[Index-1].result);
+    Ind=pop();  //goto
+    Ind2=pop(); //IF
+    Ind3=pop(); //repeat Label
+    strcpy(QUAD[Ind].result,QUAD[Index -1].result);
+    strcpy(QUAD[Ind2].result,QUAD[Ind3].result);
 }
 
 
