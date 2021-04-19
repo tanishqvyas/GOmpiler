@@ -161,38 +161,44 @@ def copy_propagation(block):
 
     return final_block
 
-def dead_code_elimination(block):
-    num_lines=len(block)
-    used=set()
-    defined_vars=set()
-    for line in block:
-        if line[0] in ops or line[0]=='=':
-            if isidentifier(line[-1]):
-                defined_vars.add(line[-1])
 
+
+def dead_code_elimination(block):
+    rhs_vars=set()
+    all_vars=set()
+    # collect all vars
+    # collect rhs vars
+    num_lines=len(block)
     for line in block:
         if line[0]=="=":
             if isidentifier(line[1]):
-                used.add(line[1])
+                all_vars.add(line[1])
+                rhs_vars.add(line[1])
+            all_vars.add(line[-1])
         if line[0] in ops:
             if isidentifier(line[1]):
-                used.add(line[1])
+                all_vars.add(line[1])
+                rhs_vars.add(line[1])
             if isidentifier(line[2]):
-                used.add(line[2])
+                all_vars.add(line[2])
+                rhs_vars.add(line[2])
+            all_vars.add(line[-1])
         if line[0]=="if":
             if isidentifier(line[1]):
-                used.add(line[1])
+                rhs_vars.add(line[1])
 
-    temps_to_remove = defined_vars - used
+    # collect dead vars set
+    dead_vars = all_vars-rhs_vars
+    # add lines without dead vars
     final_block=[]
     for b in block:
         line=b.copy()
-        if(line[-1] not in temps_to_remove):
+        if (line[0]=="=") and (line[-1] in dead_vars):
+            continue
+        else:
             final_block.append(line)
-    if num_lines == len(final_block):
-        return final_block
-    return dead_code_elimination(final_block)   
-
+    
+    return final_block
 
 blockno=1
 updated_block=[]

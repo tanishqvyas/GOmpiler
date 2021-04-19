@@ -501,7 +501,7 @@ variableDeclaration             : T_VAR T_IDENTIFIER type T_ASSIGN {strcpy(doldo
                                 }
                                 | T_IDENTIFIER T_WALRUS {strcpy(doldol,"");} strexpressions semi
                                 {
-                                    AddQuadruple(":=",$4,"",$1,resulttemp);
+                                    AddQuadruple("=",$4,"",$1,resulttemp);
 
                                     int foundIndex = checkDeclared(yyscope, $1);
                            
@@ -563,7 +563,7 @@ arrayDeclaration                : T_VAR T_IDENTIFIER T_BRACKET_OPEN {strcpy(dold
                                     strcpy(arrayvalues,"{");
                                     strcat(arrayvalues,$9);
                                     strcat(arrayvalues,"}");
-                                    AddQuadruple(":=",arrayvalues,"",$1,resulttemp);
+                                    AddQuadruple("=",arrayvalues,"",$1,resulttemp);
 
                                     int foundIndex = checkDeclared(yyscope, $1);
                                     if(foundIndex != -1)
