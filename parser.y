@@ -322,7 +322,7 @@ T                               : T {strcat(doldol,"*");} T_MUL F
                                 }
                                 ;
 
-F                               : {strcat(doldol,"(");}T_PAREN_OPEN arithmeticExpression {strcat(doldol,")");}T_PAREN_CLOSE
+F                               : T_PAREN_OPEN {strcat(doldol,"(");} arithmeticExpression {strcat(doldol,")");}T_PAREN_CLOSE
                                 {
                                     strcpy($$,$3);
                                 }
@@ -674,7 +674,7 @@ arrayAssignment                 : T_IDENTIFIER T_BRACKET_OPEN arithmeticExpressi
                                 }
                                 ;
 
-funccall                        : T_IDENTIFIER {paramscount=0;} T_PAREN_OPEN argslist T_PAREN_CLOSE semi
+funccall                        : T_IDENTIFIER {paramscount=0;} T_PAREN_OPEN argslist T_PAREN_CLOSE
                                 {
 
                                     int foundIndex = searchFunction($1);

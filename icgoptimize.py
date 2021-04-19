@@ -10,13 +10,13 @@ ops=['+','-','*','/','<','>','<=','>=','==','!=']
 
 def constant_propagation(block,comp=[]):
 
-    vars = dict() #stores identifiers/temporaries as key and constants as value
+    vars = dict() 
     for b in block:
         line=b
         if (line[0]=='=' and line[1].isnumeric()):
             if line[3] not in vars:
                 vars[line[3]] = line[1]
-    final_list = [] #stores the final list of lines in the ICG after constants are propagated
+    final_list = []
     for b in block:
         line = b
         if(line[0] in ops):
@@ -27,14 +27,14 @@ def constant_propagation(block,comp=[]):
         if(line[0] == '=' and line[1] in vars):
             line[1] = vars[line[1]]
         final_list.append(line)
-    #returns 0 if the new ICG generated is the same as the last one else 1
+
     if(final_list == comp):
         return final_list,0
     else:
         return final_list,1
 
 def constant_folding(block,comp=[]):
-    final_list=[] #stores the final list of lines after constant folding is performed
+    final_list=[]
     for b in block:
         line=b
         if (line[0] in ops and line[1].isnumeric() and line[2].isnumeric()):
@@ -65,16 +65,14 @@ for block in basicblocks:
     flag1 = 1
     flag2 = 1 
     n=1
-    #print("Block",block)
     const_prop_list,flag1 = constant_propagation(block)
     const_fold_list,flag2 = constant_folding(const_prop_list)
-
 
     while int(flag1) or int(flag2):
         const_prop_list,flag1 = constant_propagation(const_fold_list,const_prop_list)
         const_fold_list,flag2 = constant_folding(const_prop_list,const_fold_list)
         n=n+1
-    #temp_const_propagation(const_fold_list)
+
 
     for i in const_fold_list:
         print(" ".join(i))
