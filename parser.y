@@ -332,6 +332,7 @@ F                               : T_PAREN_OPEN {strcat(doldol,"(");} arithmeticE
                                     if(foundIndex == -1)
                                     {
                                         printf("\033[0;31mError at line number %d\n\033[0;37m ReferenceError : assignment to undeclared variable \033[0;35m%s\033[0;37m\n\n", yylineno, $1);
+                                        valid=0;
                                     }
                                     else
                                     {
@@ -345,6 +346,7 @@ F                               : T_PAREN_OPEN {strcat(doldol,"(");} arithmeticE
                                     if(foundIndex == -1)
                                     {
                                         printf("\033[0;31mError at line number %d\n\033[0;37m ReferenceError : assignment to undeclared variable \033[0;35m%s\033[0;37m\n\n", yylineno, $1);
+                                        valid=0;
                                     }
                                     else
                                     {
@@ -414,9 +416,9 @@ M                               : M T_OR {strcat(doldol,$2);} N
                                 }
                                 ;
 
-N                               : T_PAREN_OPEN {strcat(doldol,"(");} relationalExpression T_PAREN_CLOSE
+N                               : T_PAREN_OPEN relationalExpression T_PAREN_CLOSE
                                 {
-                                    strcpy($$,$3);
+                                    strcpy($$,$2);
                                     strcat(doldol,")");
                                 }
                                 ;
@@ -444,19 +446,21 @@ variableDeclaration             : T_VAR T_IDENTIFIER type T_ASSIGN {strcpy(doldo
                                         {
                                             insertSymbolEntry($2 , yylineno, @2.first_column, yyscope, $3, doldol,findSize($3));   
                                         }
-                                        else if(strcmp($3,"float")==0 && strcmp(curType,"int")==0)
+                                        else if(strcmp($3,"float64")==0 && strcmp(curType,"int")==0)
                                         {
                                             insertSymbolEntry($2 , yylineno, @2.first_column, yyscope, "float", doldol,findSize("float"));
                                         } 
                                         else
                                         {
                                             printf("\033[0;31mError at line number %d\n\033[0;37m Cannot use %s (type untyped %s) as type %s in assignment\n\n", yylineno, doldol, curType, $3);
+                                            valid=0;
                                         }
                                     }
 
                                     else
                                     {
                                         printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m Redeclared in this block.\n\n", yylineno, $2);
+                                        valid=0;
                                     }
                                 }
                                 | T_VAR T_IDENTIFIER type semi
@@ -470,6 +474,7 @@ variableDeclaration             : T_VAR T_IDENTIFIER type T_ASSIGN {strcpy(doldo
                                     else
                                     {
                                         printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m Redeclared in this block.\n\n", yylineno, $2);
+                                        valid=0;
                                     }
                                 }
                                 | T_VAR T_IDENTIFIER T_ASSIGN {strcpy(doldol,"");} strexpressions semi
@@ -491,6 +496,7 @@ variableDeclaration             : T_VAR T_IDENTIFIER type T_ASSIGN {strcpy(doldo
                                     else
                                     {
                                         printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m Redeclared in this block.\n\n", yylineno, $2);
+                                        valid=0;
                                     }
                                 }
                                 | T_IDENTIFIER T_WALRUS {strcpy(doldol,"");} strexpressions semi
@@ -511,6 +517,7 @@ variableDeclaration             : T_VAR T_IDENTIFIER type T_ASSIGN {strcpy(doldo
                                     else
                                     {
                                         printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m Redeclared in this block.\n\n", yylineno, $1);
+                                        valid=0;
                                     }
                                 }
                                 ;
@@ -527,6 +534,7 @@ arrayDeclaration                : T_VAR T_IDENTIFIER T_BRACKET_OPEN {strcpy(dold
                                     if(foundIndex != -1)
                                     {
                                         printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m Redeclared in this block.\n\n", yylineno, $2);
+                                        valid=0;
                                     }
 
                                     else
@@ -543,6 +551,7 @@ arrayDeclaration                : T_VAR T_IDENTIFIER T_BRACKET_OPEN {strcpy(dold
                                         else 
                                         {
                                             printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m array value(s) do not match array type.\n\n", yylineno, $9);
+                                            valid=0;
                                         }
                                     }
                                 }
@@ -560,6 +569,7 @@ arrayDeclaration                : T_VAR T_IDENTIFIER T_BRACKET_OPEN {strcpy(dold
                                     if(foundIndex != -1)
                                     {
                                         printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m Redeclared in this block.\n\n", yylineno, $1);
+                                        valid=0;
                                     }
 
                                     else
@@ -576,6 +586,7 @@ arrayDeclaration                : T_VAR T_IDENTIFIER T_BRACKET_OPEN {strcpy(dold
                                         else 
                                         {
                                             printf("\033[0;31mError at line number %d\n\033[0;37m \033[0;36m%s\033[0;37m array value(s) do not match array type.\n\n", yylineno, $9);
+                                            valid=0;
                                         }
                                     }
 
@@ -630,12 +641,13 @@ variableAssignment              : T_IDENTIFIER T_ASSIGN {strcpy(doldol,"");} str
                                     if(foundIndex == -1)
                                     {
                                         printf("\033[0;31mError at line number %d\n\033[0;37m ReferenceError : assignment to undeclared variable \033[0;35m%s\033[0;37m\n\n", yylineno, $1);
+                                        valid=0;
                                     }
                                     else
                                     {
                                         char* curType = DetermineType(doldol);
 
-                                        if(strcmp(SymbolTable[functionid][foundIndex].type, curType) == 0 || strcmp(curType,"expr")==0 || strcmp(SymbolTable[functionid][foundIndex].type,"float")==0 && strcmp(curType,"int")==0)
+                                        if(strcmp(SymbolTable[functionid][foundIndex].type, curType) == 0 || strcmp(curType,"expr")==0 || strcmp(SymbolTable[functionid][foundIndex].type,"float64")==0 && strcmp(curType,"int")==0)
                                         {
                                             updateSymbolEntry($1, yylineno, @1.first_column, yyscope, SymbolTable[functionid][foundIndex].type, doldol);
                                         }
@@ -646,6 +658,7 @@ variableAssignment              : T_IDENTIFIER T_ASSIGN {strcpy(doldol,"");} str
                                         else
                                         {
                                             printf("\033[0;31mError at line number %d\n\033[0;37m Cannot use %s (type untyped %s) as type %s in assignment\n\n", yylineno, doldol, curType, SymbolTable[functionid][foundIndex].type);
+                                            valid=0;
                                         }
                                     }
                                 }
@@ -657,6 +670,7 @@ arrayAssignment                 : T_IDENTIFIER T_BRACKET_OPEN arithmeticExpressi
                                     if(foundIndex == -1)
                                     {
                                         printf("\033[0;31mError at line number %d\n\033[0;37m ReferenceError : assignment to undeclared variable \033[0;35m%s\033[0;37m\n\n", yylineno, $1);
+                                        valid=0;
                                     }
                                     else
                                     {
@@ -669,6 +683,7 @@ arrayAssignment                 : T_IDENTIFIER T_BRACKET_OPEN arithmeticExpressi
                                         if(strcmp(curType, SymbolTable[functionid][foundIndex].type) != 0)
                                         {
                                             printf("\033[0;31mError at line number %d\n\033[0;37m Type Mismatch \033[0;35m%s\033[0;37m\n\n", yylineno, $1);   
+                                            valid=0;
                                         }
                                     }
                                 }
@@ -681,11 +696,12 @@ funccall                        : T_IDENTIFIER {paramscount=0;} T_PAREN_OPEN arg
                                     if(foundIndex == -1)
                                     {
                                         printf("\033[0;31mError at line number %d\n\033[0;37m ReferenceError : access to undefined function \033[0;35m%s\033[0;37m\n\n", yylineno, $1);
+                                        valid=0;
                                     }
                                     
                                     char temp[100];
                                     sprintf(temp,"%d",paramscount);
-                                    GenerateTemp("call",$1,temp,$$);
+                                    GenerateTemp("call",$1,temp,resulttemp);
                                     
                                     strcpy($$,$1);
                                     strcat($$,"(");
@@ -722,6 +738,7 @@ arg                             : T_IDENTIFIER
                                     if(foundIndex == -1)
                                     {
                                         printf("\033[0;31mError at line number %d\n\033[0;37m ReferenceError : access to undeclared variable \033[0;35m%s\033[0;37m\n\n", yylineno, $1);
+                                        valid=0;
                                     }
                                     strcpy($$,$1);
                                 }
@@ -737,7 +754,7 @@ arg                             : T_IDENTIFIER
 
 extern void yyerror(char* si)
 {
-    printf("%s\n",si);
+    printf("%s at line number %d\n",si,yylineno);
     valid=0;
 }
 
@@ -872,7 +889,7 @@ int main(int argc, char * argv[])
     yylloc.first_column=yylloc.last_column=0;
     printf("LINENO \t TYPE      \tTOKENNAME\n");
     int accepted=yyparse();
-    if(accepted==0 || valid!=0){
+    if(accepted==0 && valid!=0){
 
         printSymbolTable();
 
@@ -922,6 +939,12 @@ int main(int argc, char * argv[])
         printf("\n");
 	    
         
+    }
+
+    else
+    {
+        printf("\n\n\033[0;31mSyntax is Invalid, Cannot generate Three Address Code.\033[0;37m\n\n");
+
     }
     fclose(yyin);
     return 0;

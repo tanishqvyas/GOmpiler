@@ -148,11 +148,6 @@ true                    {if (DEBUG_MODE) print_token(yytext,LITERAL, yylineno); 
 {identifier}			{
                             if (DEBUG_MODE) print_token(yytext, IDENTIFIER, yylineno);
                             int identifierLength = strlen(yytext);
-                            if(identifierLength > 31)
-                            {
-                                printf("\033[0;31mERROR at line number : %d\n \033[0;37m Invalid identifier : \033[0;35m%s\033[0;37m of length %d. Identifier cannot exceed 31 characters in length.\n\n", yylineno, yytext, identifierLength);
-                                yytext[31]='\0';
-                            }
                             yylval.str=strdup(yytext); 
                             yylloc.first_column = yylloc.last_column; 
                             yylloc.last_column += strlen(yytext);

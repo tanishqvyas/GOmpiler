@@ -1,6 +1,6 @@
 package main
 import "fmt"
-
+/*
 func add(a int, b int)
 {
 	var c int = a+b
@@ -12,22 +12,34 @@ func add(a int, b int)
 		return c
 	}
 }
-
+*/
 func main()
 {
-	var a[4]int{1,2,3,4}
-	a[2]=2
-	var i int = 4+ a[3]
-	add(i, 3)
-	var x int =7
-	y:=4
-	switch x
+	/*
+	var a string = "a"
+	
+	var b string= a
+	var c string = b+b
+	*/
+	var b int = 1
+	var a int = 5
+	var c int = 6
+	var d int = a+b
+	var g int =a+b
+	var e int = c
+	var d int = e*e
+	var d int = 5 + 5
+	c=d
+	a =c+b
+
+	var z=5
+	var i int =0;
+	var x int=6;
+	var j int=7;
+	repeat
 	{
-	case 4:
-		x=y
-	case 7:
-		y=x
-	default:
-		x=x+y
-	}
+		x=z*z + i
+		i=i+1
+	}until (i>j)
+	
 }

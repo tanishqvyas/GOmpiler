@@ -5,51 +5,69 @@ Reparam b
 = t0  c
 label   L0
 < c 5 t1
-== c t1 t2
-if t2 TRUE L1
+if t1 TRUE L1
 GOTO   L2
 label   L1
 return 5  
 GOTO   L4
 label   L2
-> c 5 t3
-== c t3 t4
-if t4 TRUE L3
+> c 5 t2
+if t2 TRUE L3
 GOTO   L4
 label   L3
 return c  
 GOTO   L4
+GOTO   L4
 label   L4
 func end add 
 func begin main 
-= {1,2,3,4}  a
-* 4 2 t5
-[]= t5 2 a
-* 4 3 t6
-=[] a t6 t7
-+ 4 t7 t8
-= t8  i
-param i  
-param 3  
-call add 2 t9
-= 7  x
-:= 4  y
+= "Ex"  q
+= 9.3  temp
+= 10  b
++ b 10 t3
+= t3  x
+= 3  y
+= {1,2,3,4}  array
 label   L5
-== x 4 t10
-if t10 TRUE L6
+== y 1 t4
+if t4 TRUE L6
 GOTO   L7
 label   L6
-= y  x
+= x  y
++ 3 5 t5
+= t5  z
+< s q t6
+= t6  check
 GOTO   L9
 label   L7
-== x 7 t11
-if t11 TRUE L8
+== y 2 t7
+if t7 TRUE L8
 GOTO   L9
 label   L8
-= x  y
+param 3  
+param 5  
+call add 2 t8
+= add(3,5)  sum
 GOTO   L9
-+ x y t12
-= t12  x
 GOTO   L9
 label   L9
+= 0  i
+= 0  j
+label   L10
+= 10  dead
+label   L11
++ j 1 t9
+= t9  j
+> j 10 t10
+if t10 TRUE L12
+GOTO   L11
+label   L12
+* 4 i t11
+[]= t11 j array
++ i 1 t12
+= t12  i
+> i 3 t13
+if t13 TRUE L13
+GOTO   L10
+label   L13
 func end main 
