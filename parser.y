@@ -810,6 +810,10 @@ void GenerateTemp(char op[100],char arg1[100],char arg2[100],char result[100]){
 	strcpy(QUAD[Index].arg2,arg2);
 	sprintf(QUAD[Index].result,"t%d",tIndex++);
 	strcpy(result,QUAD[Index++].result);
+
+    char token[100];
+    sprintf(token,"t%d",tIndex-1);
+    insertSymbolEntry(token, 0, 0, 0, "", "","");
 }
 
 void switchCaseGenerate(char arg1[100])
