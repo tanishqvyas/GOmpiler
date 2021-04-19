@@ -160,29 +160,7 @@ def copy_propagation(block):
                 vars[line[3]] = line[1]
 
     return final_block
-'''
-def dead_code_elimination(block):
-    used = {}
-    for b in block:
-        line=b.copy()
-        for i in range(len(line)):
-            if isidentifier(line[i]) and line[i][0]!='L' and line[i] not in ['GOTO','label','func','begin','end','main','if','param','Reparam','call','TRUE','FALSE','']:
-                if line[i] not in used:
-                    used[line[i]] = 0
-                used[line[i]] = used[line[i]] + 1
-                    
-       
-    final_block = []
-    for b in block:
-        line = b
-        no_dc_vars_in_line = 1
-        for i in range(len(line)):
-            if line[i] in used and used[line[i]] <= 1:
-                    no_dc_vars_in_line = 0
-        if no_dc_vars_in_line:
-            final_block.append(line)
-    return final_block
-'''
+
 def dead_code_elimination(block):
     num_lines=len(block)
     used=set()
