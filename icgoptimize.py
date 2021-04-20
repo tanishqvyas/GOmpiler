@@ -141,10 +141,7 @@ def constant_folding(block,previous_state=[]):
         return final_block,1
 
 def copy_propagation(block):
-    '''
-    x=y
-    all future references of x will become y
-    '''
+
     # Stores all variables and temporaries
     vars = {}
     final_block=[]
@@ -175,6 +172,8 @@ def dead_code_elimination(block):
                 all_vars.add(line[1])
                 rhs_vars.add(line[1])
             all_vars.add(line[-1])
+            if(line[-1] in rhs_vars):
+                rhs_vars.discard(line[-1])
         if line[0] in ops:
             if isidentifier(line[1]):
                 all_vars.add(line[1])
@@ -183,6 +182,10 @@ def dead_code_elimination(block):
                 all_vars.add(line[2])
                 rhs_vars.add(line[2])
             all_vars.add(line[-1])
+            
+            if(line[-1] in rhs_vars):
+                rhs_vars.discard(line[-1])
+
         if line[0]=="if":
             if isidentifier(line[1]):
                 rhs_vars.add(line[1])
@@ -197,8 +200,9 @@ def dead_code_elimination(block):
             continue
         else:
             final_block.append(line)
-    
-    return final_block
+    if(num_lines == len(final_block)):
+        return final_block
+    return dead_code_elimination(final_block)
 
 blockno=1
 updated_block=[]
@@ -216,12 +220,12 @@ for block in basicblocks:
         const_propogated_block,flag1= constant_propagation(const_folded_block,const_propogated_block)
         const_folded_block,flag2 = constant_folding(const_propogated_block,const_folded_block)
     
-    #print("\n-----After Constant Folding and Propogation for Basic Block",blockno,"-----")
+    #print("\n\n-----After Constant Folding and Propogation for Basic Block",blockno,"-----")
     #for line in const_folded_block:
     #    print("\t".join(line))
 
     copy_propogated_block=copy_propagation(const_folded_block)
-    #print("\n-----After Copy Propogation for Basic Block",blockno,"-----")
+    #print("\n\n-----After Copy Propogation for Basic Block",blockno,"-----")
     #for line in copy_propogated_block:
     #    print("\t".join(line))
 
@@ -233,7 +237,6 @@ dead_code_eliminated=dead_code_elimination(updated_block)
 print("\t\t FINAL OPTIMIZED INTERMEDIATE CODE\n")
 print("\t\t op\targ1\targ2\tresult")
 print("\t\t -----------------------------")
-#print(dead_code_eliminated)
 for line in dead_code_eliminated:
     print("\t\t","\t".join(line))
     

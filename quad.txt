@@ -1,7 +1,7 @@
 func begin add 
-Reparam a  
-Reparam b  
-+ a b t0
+Reparam one  
+Reparam two  
++ one two t0
 = t0  c
 label   L0
 < c 5 t1
