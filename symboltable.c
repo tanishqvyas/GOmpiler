@@ -127,10 +127,8 @@ int searchSymbol(int curScope, char *token)
 void insertSymbolEntry(char *token, int lineNumber, int startColumn, int tokenScope, char *type, char *value, char* length)
 {
 
-      int foundIndex = checkDeclared(tokenScope, token);
+        int foundIndex = checkDeclared(tokenScope, token);
 
-    // if (foundIndex == -1)
-    // {
 
         SymbolTable[functionid][functions[functionid].symbolCount].symbolID = functions[functionid].symbolCount;
         strcpy(SymbolTable[functionid][functions[functionid].symbolCount].token, token);
@@ -143,16 +141,7 @@ void insertSymbolEntry(char *token, int lineNumber, int startColumn, int tokenSc
         if (DEBUG_MODE)
             printf("\033[0;32mAdded a new Entry to Symbol Table.\033[0;30m\n");
         ++functions[functionid].symbolCount;
-    // }
 
-    //else
-    //{
-
-    //    strcpy(SymbolTable[foundIndex].value, value);
-    //    if (DEBUG_MODE)
-            // printf("\033[0;32mIdenitifier exists. Symbol Table updated. %s\033[0;30m\n", value);
-        // return;
-    //}
 }
 
 void updateSymbolEntry(char *token, int lineNumber, int startColumn, int tokenScope, char *type, char *value)
@@ -160,29 +149,13 @@ void updateSymbolEntry(char *token, int lineNumber, int startColumn, int tokenSc
 
     int foundIndex = searchSymbol(tokenScope, token);
 
-    //if (foundIndex == -1)
-    //{
-    //    SymbolTable[symbolCount].symbolID = symbolCount;
-    //    strcpy(SymbolTable[symbolCount].token, token);
-    //    SymbolTable[symbolCount].lineNumber = lineNumber;
-    //    SymbolTable[symbolCount].startColumn = startColumn;
-    //    SymbolTable[symbolCount].tokenScope = tokenScope;
-    //    strcpy(SymbolTable[symbolCount].type, type);
-    //    strcpy(SymbolTable[symbolCount].value, value);
-    //    if (DEBUG_MODE)
-    //        printf("\033[0;32mAdded a new Entry to Symbol Table.\033[0;30m\n");
-    //    ++symbolCount;
-    //}
+    strcpy(SymbolTable[functionid][foundIndex].value, value);
+    strcpy(SymbolTable[functionid][foundIndex].type, type);
+    strcpy(SymbolTable[functionid][foundIndex].length, findSize(type));
+    if (DEBUG_MODE)
+        printf("\033[0;32mIdenitifier exists. Symbol Table updated.%s\033[0;30m\n", value);
+    return;
 
-    //else
-    //{
-        strcpy(SymbolTable[functionid][foundIndex].value, value);
-        strcpy(SymbolTable[functionid][foundIndex].type, type);
-        strcpy(SymbolTable[functionid][foundIndex].length, findSize(type));
-        if (DEBUG_MODE)
-            printf("\033[0;32mIdenitifier exists. Symbol Table updated.%s\033[0;30m\n", value);
-        return;
-    //}
 }
 
 
